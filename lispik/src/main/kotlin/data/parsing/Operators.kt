@@ -10,7 +10,7 @@ import domain.model.Node
 import domain.model.TokenInfo
 
 fun Tokens.parseOperator(info: TokenInfo<LToken.Operator>): Validated<Error, Node> =
-    parseOperands()
+    parseRemainingExpressions()
         .valueOr { return it.invalid() }
         .let { args ->
             if (args.size != 2) {

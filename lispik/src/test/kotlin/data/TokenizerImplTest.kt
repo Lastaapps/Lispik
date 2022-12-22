@@ -1,7 +1,7 @@
 package data
 
-import data.token.TokenizerImpl
 import data.token.asSequence
+import domain.Tokenizer
 import domain.model.FunToken
 import domain.model.LToken
 import domain.model.tryMatchFun
@@ -18,7 +18,7 @@ class TokenizerImplTest : FunSpec({
         fun runNextTokenTest(input: String, vararg res: Any) {
             println("Running test for '$input'")
 
-            TokenizerImpl.from(input)
+            Tokenizer.from(input)
                 .asSequence()
                 .toList()
                 .map { token -> token.fold({ it }, { it.token }) } shouldBe res.toList()
@@ -61,7 +61,7 @@ class TokenizerImplTest : FunSpec({
             val input = "pair? eq? atom? null? nil? def defun define"
             println("Running test for '$input'")
 
-            val tokens = TokenizerImpl.from(input)
+            val tokens = Tokenizer.from(input)
                 .asSequence()
                 .toList()
                 .map { token -> token.fold({ it }, { it.token }) }

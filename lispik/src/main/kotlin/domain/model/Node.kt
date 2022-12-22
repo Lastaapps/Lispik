@@ -2,6 +2,7 @@ package domain.model
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toPersistentList
 
 sealed interface Node {
     data class CallByName(val name: String, val args: ImmutableList<Node>) : Node
@@ -62,11 +63,24 @@ sealed interface Node {
         data class Lambda(val params: ImmutableList<String>, override val body: Node) : Closures
     }
 
+    sealed interface Apply : Node {
+        val args: ImmutableList<Node>
+
+        data class ApplyCall(val toCall: String, override val args: ImmutableList<Node>) : Apply {
+            constructor(toCall: String, vararg args: Node) : this(toCall, args.toList().toPersistentList())
+        }
+
+        data class ApplyOperator(val operator: LToken.Operator, override val args: ImmutableList<Node>) : Apply {
+            constructor(operator: LToken.Operator, vararg args: Node) : this(operator, args.toList().toPersistentList())
+        }
+    }
+
     sealed interface Literal : Node {
         data class LInteger(val value: Int) : Literal
         data class LList(val value: ImmutableList<Literal>) : Literal {
             constructor(vararg args: Literal) : this(args.toList().toImmutableList())
         }
+
         data object LNil : Literal
     }
 }

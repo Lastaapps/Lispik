@@ -9,9 +9,7 @@ import arrow.core.Valid
 import arrow.core.Validated
 import arrow.core.getOrElse
 import arrow.core.invalid
-import arrow.core.orElse
 import arrow.core.some
-import arrow.core.valid
 import arrow.core.valueOr
 import domain.model.Error
 import domain.model.LToken
@@ -63,22 +61,22 @@ internal fun CacheIterator.matchSequenceOf(predicate: (Char) -> Boolean): Valida
         local + matchSequenceOf(predicate).valueOr { "" }
     }
 
-/**
- * Ensures, that after a token there is either closing bracket, white space or EOF
- * Does not move iterator forward
- */
-internal fun CacheIterator.matchAfterToken() =
-    Either.conditionally(
-        !hasNext(),
-        { Error.TokenError.NonClosedScope(position()) },
-        { },
-    ).fold({ it.invalid() }, { it.valid() })
-        .orElse {
-            matchIf(move = false) { it.isWhitespace() }
-                .orElse { matchChar(')', move = false) }
-        }.mapLeft {
-            Error.TokenError.NonClosedScope(position())
-        }
+///**
+// * Ensures, that after a token there is either closing bracket, white space or EOF
+// * Does not move iterator forward
+// */
+//internal fun CacheIterator.matchAfterToken() =
+//    Either.conditionally(
+//        !hasNext(),
+//        { Error.TokenError.NonClosedScope(position()) },
+//        { },
+//    ).fold({ it.invalid() }, { it.valid() })
+//        .orElse {
+//            matchIf(move = false) { it.isWhitespace() }
+//                .orElse { matchChar(')', move = false) }
+//        }.mapLeft {
+//            Error.TokenError.NonClosedScope(position())
+//        }
 
 internal fun CacheIterator.matchNumber(): Validated<Error.TokenError, Int> =
     matchSequenceOf('0'..'9').map { it.toInt() }

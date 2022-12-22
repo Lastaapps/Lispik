@@ -1,10 +1,16 @@
 package domain
 
 import arrow.core.Validated
+import data.token.TokenizerImpl
 import domain.model.Error
 import domain.model.LToken
 import domain.model.TokenInfo
 
 interface Tokenizer {
-    fun nextToken() : Validated<Error.TokenError, TokenInfo<LToken>>
+
+    companion object {
+        fun from(test: String) = TokenizerImpl(test.iterator())
+    }
+
+    fun nextToken(): Validated<Error.TokenError, TokenInfo<LToken>>
 }

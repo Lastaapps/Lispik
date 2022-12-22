@@ -5,54 +5,51 @@ import arrow.core.invalid
 import arrow.core.valid
 import arrow.core.valueOr
 import domain.Parser
-import domain.Tokenizer
 import domain.model.Error
-import domain.model.Node
 import domain.model.LToken
+import domain.model.Node
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.mutate
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toPersistentList
 
-typealias Tokens = Tokenizer
+typealias Tokens = TokenIterator
 
 data class GlobalScope(
-    val functions: Map<String, Node>,
+    val functions: ImmutableMap<String, Node>,
     val expressions: ImmutableList<Node>,
 )
 
 fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
     val functions = mutableMapOf<String, Node>()
+    val expressions = mutableListOf<Node>()
 
+    while (true) {
+        val info = peek().valueOr { return it.invalid() }
+        if (info.token == LToken.Eof) {
+            break
+        }
 
-    val nodes = persistentListOf<Node>().mutate { nodes ->
-        while (true) {
-            val starting = nextToken().valueOr { return it.invalid() }
-
-            when (starting.token) {
-                LToken.Bracket.Opened -> {
-                    parseListContent().valueOr { return it.invalid() }.let { node ->
-                        if (node is Node.Closures.DeFun) {
-                            functions += node.name to node
-                        } else {
-                            nodes += node
-                        }
-                    }
-                }
-
-                LToken.Eof -> return@mutate
-                else -> return Error.ParserError.UnexpectedToken(starting).invalid()
+        parseExpression(enableDeFun = true).valueOr { return it.invalid() }.let { expression ->
+            if (expression is Node.Closures.DeFun) {
+                functions += expression.name to expression
+            } else {
+                expressions += expression
             }
         }
     }
 
-    return GlobalScope(functions, nodes).valid()
+    return GlobalScope(
+        functions.toImmutableMap(),
+        expressions.toPersistentList(),
+    ).valid()
 }
 
 /**
  * S - starting symbol
  * E - expression
  * X - group of expressions
- * L - literal
+ * L - literal (int, nil)
  * Q - quoted list
  * C - callable
  * A - arg names
@@ -69,7 +66,7 @@ fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
  * C -> defun (N A) E
  * C -> let (N E) E
  * C -> V X
- * C -> apply V X E -> V (list X E)
+ * C -> apply V X -> V (list* X)
  */
 class ParserImpl(
     private val tokens: Tokens,

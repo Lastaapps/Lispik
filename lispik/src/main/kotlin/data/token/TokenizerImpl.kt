@@ -1,7 +1,6 @@
 package data.token
 
 import arrow.core.Validated
-import arrow.core.andThen
 import arrow.core.left
 import arrow.core.right
 import arrow.core.valid
@@ -16,18 +15,6 @@ class TokenizerImpl(
     charIterator: Iterator<Char>
 ) : Tokenizer {
     private val iterator = CacheIterator(charIterator)
-
-    companion object {
-        fun from(test: String) = TokenizerImpl(test.iterator())
-    }
-
-    /**
-     * Requires some tokens to be followed by space, closing bracket or EOF
-     */
-    fun Validated<Error.TokenError, LToken>.requireAfterToken() =
-        andThen { token ->
-            iterator.matchAfterToken().map { token }
-        }
 
     //TODO require whitespace
     private val matchers = iterator.let {

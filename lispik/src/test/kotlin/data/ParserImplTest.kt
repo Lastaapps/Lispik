@@ -1,45 +1,63 @@
 package data
 
+import arrow.core.Invalid
 import arrow.core.Valid
 import data.parsing.GlobalScope
-import data.parsing.ParserImpl
-import data.token.TokenizerImpl
-import io.kotest.core.spec.style.ShouldSpec
+import domain.Parser
+import domain.Tokenizer
+import domain.model.Error
+import domain.model.LToken
 import domain.model.Node
+import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.beOfType
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
 
 class ParserImplTest : ShouldSpec({
 
     context("Basic") {
 
-        fun runParserTest(input: String, res: GlobalScope) {
-            ParserImpl(TokenizerImpl.from(input)).parseToAST().let { global ->
-                global.tap {
-                    println("For '$input' got '$it'")
+        fun createParser(input: String) =
+            Parser.from(Tokenizer.from(input)).parseToAST().let { res ->
+                println("Testing for input:\n'$input'")
+                res.tap {
+                    println("Result:\n'$it'")
                 }.tapInvalid {
-                    println("For '$input' got '$it'")
+                    println("Result:\n'$it'")
                 }
+            }
 
-                global should beOfType<Valid<GlobalScope>>()
-                global.map {
-                    it shouldBe res
+        fun runParserTest(input: String, expected: GlobalScope) {
+            createParser(input).let { actual ->
+                actual should beOfType<Valid<GlobalScope>>()
+                actual.map {
+                    it shouldBe expected
                 }
             }
         }
+
+        fun runParserFail(input: String, onError: (Error) -> Unit) {
+            createParser(input).let { actual ->
+                actual should beOfType<Invalid<Error>>()
+                actual.mapLeft(onError)
+            }
+        }
+
         should("Operators") {
             """
-                1
+                1 nil
                 (+ 1 (- 2 (* (/ 1 3) (< 1 2))))
             """.trimIndent().let {
                 runParserTest(
                     it,
                     GlobalScope(
-                        mapOf(),
+                        persistentMapOf(),
                         persistentListOf(
                             Node.Literal.LInteger(1),
+                            Node.Literal.LNil,
                             Node.Binary.Add(
                                 Node.Literal.LInteger(1),
                                 Node.Binary.Subtract(
@@ -71,7 +89,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        mapOf(),
+                        persistentMapOf(),
                         persistentListOf(
                             Node.Binary.Cons(
                                 Node.Literal.LInteger(1),
@@ -105,7 +123,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        mapOf(
+                        persistentMapOf(
                             "foo" to Node.Closures.DeFun(
                                 "foo",
                                 persistentListOf(),
@@ -146,6 +164,17 @@ class ParserImplTest : ShouldSpec({
         }
 
 
+        should("Nested defun") {
+            """
+                (+ 1 (defun (foo) (+ 1 2)))
+            """.trimIndent().let {
+                runParserFail(it) { error ->
+                    error should beInstanceOf<Error.ParserError.DeFunInNonRootScope>()
+                }
+            }
+        }
+
+
         should("Lambda and let merging") {
             """
                 (let (a 1)
@@ -156,17 +185,17 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        mapOf(),
+                        persistentMapOf(),
                         persistentListOf(
                             Node.Closures.Let(
                                 "a",
                                 Node.Literal.LInteger(1),
                                 Node.Closures.LetRec(
                                     "b",
-                                        Node.Binary.Add(
-                                            Node.VariableSubstitution("a"),
-                                            Node.Literal.LInteger(1),
-                                        ),
+                                    Node.Binary.Add(
+                                        Node.VariableSubstitution("a"),
+                                        Node.Literal.LInteger(1),
+                                    ),
                                     Node.Closures.Lambda(
                                         persistentListOf("c", "d"),
                                         Node.Binary.Multiply(
@@ -178,7 +207,63 @@ class ParserImplTest : ShouldSpec({
                                         )
                                     )
                                 )
-                                )
+                            )
+                        ),
+                    )
+                )
+            }
+        }
+
+
+        should("Apply") {
+            """
+                (apply + 2 '(3)) 
+                (apply - 2 '(3)) 
+                (apply * '(2 3)) 
+                (apply a 2 3 '()) 
+                (apply a (+ 1 1) 3 nil) 
+            """.trimIndent().let {
+                runParserTest(
+                    it,
+                    GlobalScope(
+                        persistentMapOf(),
+                        persistentListOf(
+                            Node.Apply.ApplyOperator(
+                                LToken.Operator.Add,
+                                Node.Literal.LInteger(2),
+                                Node.Literal.LList(
+                                    Node.Literal.LInteger(3),
+                                ),
+                            ),
+                            Node.Apply.ApplyOperator(
+                                LToken.Operator.Sub,
+                                Node.Literal.LInteger(2),
+                                Node.Literal.LList(
+                                    Node.Literal.LInteger(3),
+                                ),
+                            ),
+                            Node.Apply.ApplyOperator(
+                                LToken.Operator.Times,
+                                Node.Literal.LList(
+                                    Node.Literal.LInteger(2),
+                                    Node.Literal.LInteger(3),
+                                ),
+                            ),
+                            Node.Apply.ApplyCall(
+                                "a",
+                                Node.Literal.LInteger(2),
+                                Node.Literal.LInteger(3),
+                                Node.Literal.LList(),
+                            ),
+                            Node.Apply.ApplyCall(
+                                "a",
+                                Node.Binary.Add(
+                                    Node.Literal.LInteger(1),
+                                    Node.Literal.LInteger(1),
+                                ),
+                                Node.Literal.LInteger(3),
+                                Node.Literal.LNil,
+                            ),
                         ),
                     )
                 )

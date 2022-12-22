@@ -1,29 +1,29 @@
 package domain.model
 
-import arrow.core.*
-import arrow.core.continuations.option
-import arrow.typeclasses.Monoid
-
 sealed interface FunToken {
     /** Keyword */
-    enum class BuiltIn : LToken {
-        Cons,
-        Car,
-        Cdr,
-        Nil,
-        Eq,
-        Lambda,
-        Apply,
-        Let,
-        LetRec,
-        DeFun,
-        Print,
-        Read,
-        If,
+    enum class BuiltIn(vararg val names: String) : FunToken {
+        Cons("cons"),
+        Car("car"),
+        Cdr("cdr"),
+        Nil("nil", "null"),
+        If("if"),
+        IsEq("eq?"),
+        IsPair("pair?"),
+        IsAtom("atom?"),
+        IsNil("nil?", "null?"),
+        Lambda("lambda"),
+        // TODO apply
+        // Apply("apply"),
+        Let("let"),
+        LetRec("letrec"),
+        DeFun("defun", "def", "define"),
+        Print("print"),
+        Read("read"),
     }
 
-    data class User(val name: String)
+    data class User(val name: String) : FunToken
 }
 
 fun LToken.Text.tryMatchFun() =
-    FunToken.BuiltIn.values().firstOrNull { it.name.lowercase() == name } ?: FunToken.User(name)
+    FunToken.BuiltIn.values().firstOrNull { name in it.names } ?: FunToken.User(name)

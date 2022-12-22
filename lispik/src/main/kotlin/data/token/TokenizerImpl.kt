@@ -1,13 +1,15 @@
-package data
+package data.token
 
-import arrow.core.Valid
 import arrow.core.Validated
 import arrow.core.andThen
 import arrow.core.left
 import arrow.core.right
+import arrow.core.valid
 import domain.Tokenizer
 import domain.model.Error
 import domain.model.LToken
+import domain.model.TokenInfo
+import domain.model.poss
 import util.reduced
 
 class TokenizerImpl(
@@ -33,7 +35,6 @@ class TokenizerImpl(
         listOf(
             '(' to LToken.Bracket.Opened,
             ')' to LToken.Bracket.Closed,
-            '.' to LToken.Dot,
             '\'' to LToken.Quote,
         ).map { (char, token) ->
             { iterator.matchChar(char).map { token } }
@@ -41,7 +42,7 @@ class TokenizerImpl(
 
             // Operators
             listOf(
-                '+' to LToken.Operator.Plus,
+                '+' to LToken.Operator.Add,
                 // '-' to LToken.Operator.Minus, - handled in the complex section
                 '*' to LToken.Operator.Times,
                 '/' to LToken.Operator.Div,
@@ -63,34 +64,28 @@ class TokenizerImpl(
         }
     }
 
-    override fun nextToken(): Validated<Error.TokenError, LToken> {
-        while (iterator.hasNext() && iterator.current().isWhitespace()) {
+    override fun nextToken(): Validated<Error.TokenError, TokenInfo<LToken>> {
+        while (iterator.hasNext() && iterator.current().orNull()?.isWhitespace() == true) {
             iterator.move()
         }
-        if (!iterator.hasNext()) {
-            return Valid(LToken.Eof)
+        return iterator.position().let { pos ->
+            if (!iterator.hasNext()) {
+                LToken.Eof.valid()
+            } else {
+                matchers()
+            }.map { it.poss(pos) }
         }
-
-        return matchers()
     }
 }
 
 fun Tokenizer.asSequence() = sequence {
     while (true) {
-        nextToken().let { token ->
-            when (token) {
-                is Validated.Valid -> {
-                    yield(token.value.right())
-                    if (token.value == LToken.Eof) return@sequence
-                }
-
-                is Validated.Invalid -> {
-                    yield(token.value.left())
-                    return@sequence
-                }
-            }
+        nextToken().tap { token ->
+            yield(token.right())
+            if (token.token == LToken.Eof) return@sequence
+        }.tapInvalid { token ->
+            yield(token.left())
+            return@sequence
         }
     }
 }
-
-

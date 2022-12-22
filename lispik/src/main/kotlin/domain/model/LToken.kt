@@ -9,7 +9,6 @@ sealed interface LToken {
     }
 
     data object Quote : LToken
-    data object Dot : LToken
 
     data class Number(val value: Int) : LToken
 
@@ -17,8 +16,8 @@ sealed interface LToken {
     data class Text(val name: String): LToken
 
     sealed interface Operator: LToken {
-        data object Plus : Operator
-        data object Minus : Operator
+        data object Add : Operator
+        data object Sub : Operator
         data object Times : Operator
         data object Div : Operator
         data object Greater : Operator

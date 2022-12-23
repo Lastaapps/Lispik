@@ -6,6 +6,8 @@ import data.parsing.ParserImpl
 import data.parsing.Tokens
 import data.token.asSequence
 import domain.model.Error
+import domain.model.Node
+import kotlinx.collections.immutable.ImmutableList
 
 interface Parser {
     companion object {
@@ -14,4 +16,6 @@ interface Parser {
     }
 
     fun parseToAST(): Validated<Error, GlobalScope>
+
+    fun parseLiterals(): Validated<Error, ImmutableList<Node.Literal>>
 }

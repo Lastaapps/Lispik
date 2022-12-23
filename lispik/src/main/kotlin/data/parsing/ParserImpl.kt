@@ -10,6 +10,8 @@ import domain.model.LToken
 import domain.model.Node
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.mutate
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentList
 
@@ -45,6 +47,28 @@ fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
     ).valid()
 }
 
+fun Tokens.parseLiterals(): Validated<Error, ImmutableList<Node.Literal>> =
+    persistentListOf<Node.Literal>().mutate { expressions ->
+        while (true) {
+            val info = peek().valueOr { return it.invalid() }
+            if (info.token == LToken.Eof) {
+                break
+            }
+
+            parseExpression(enableDeFun = true)
+                .map {
+                    if (it is Node.Literal) {
+                        it
+                    } else {
+                        return Error.ParserError.LiteralsOnly.invalid()
+                    }
+                }
+                .valueOr { return it.invalid() }.let { expression ->
+                    expressions += expression
+                }
+        }
+    }.valid()
+
 /**
  * S - starting symbol
  * E - expression
@@ -72,4 +96,5 @@ class ParserImpl(
     private val tokens: Tokens,
 ) : Parser {
     override fun parseToAST(): Validated<Error, GlobalScope> = tokens.parseGlobalScope()
+    override fun parseLiterals(): Validated<Error, ImmutableList<Node.Literal>> = tokens.parseLiterals()
 }

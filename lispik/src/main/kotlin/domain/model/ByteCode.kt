@@ -2,17 +2,20 @@ package domain.model
 
 import arrow.core.Validated
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import java.util.*
 import kotlin.collections.ArrayDeque
 
 typealias LStack = Stack<ByteCode.Literal>
-typealias LDump = Unit
+typealias LDump = Stack<ByteCode.CodeBlock>
 typealias LCodeQueue = ArrayDeque<ByteCode>
 typealias LEnvironment = Unit
 
 sealed interface ByteCode {
 
-    data class CodeBlock(val instructions: ImmutableList<ByteCode>) : ByteCode
+    data class CodeBlock(val instructions: ImmutableList<ByteCode>) : ByteCode {
+        constructor(vararg instructions: ByteCode) : this(instructions.toList().toImmutableList())
+    }
 
     sealed interface Instruction : ByteCode {
         fun process(

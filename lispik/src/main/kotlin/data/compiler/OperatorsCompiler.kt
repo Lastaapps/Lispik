@@ -56,9 +56,14 @@ fun Node.Ternary.compile(): Validated<Error, ByteCode.CodeBlock> {
     val c1 = arg1.compile().valueOr { return it.invalid() }
     val c2 = arg2.compile().valueOr { return it.invalid() }
 
-    val inst = when (this) {
-        is Node.Ternary.If -> TODO()
+    when (this) {
+        is Node.Ternary.If -> {
+            return listOf(
+                c0,
+                ByteInstructions.Sel,
+                ByteCode.CodeBlock(listOf(c1, ByteInstructions.Join).flatten()),
+                ByteCode.CodeBlock(listOf(c2, ByteInstructions.Join).flatten()),
+            ).flatten().valid()
+        }
     }
-
-    return listOf(c0, c1, inst).flatten().valid()
 }

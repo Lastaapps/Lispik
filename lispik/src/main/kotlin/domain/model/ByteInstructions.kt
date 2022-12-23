@@ -8,6 +8,7 @@ import data.compiler.compileLiteral
 import data.compiler.unwrap
 import domain.Parser
 import domain.Tokenizer
+import kotlinx.collections.immutable.toImmutableList
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -128,6 +129,7 @@ object ByteInstructions {
         }
     }
 
+    @Suppress("unused")
     data object Nil : ByteCode.Instruction {
         override fun process(stack: LStack, dump: LDump, code: LCodeQueue, env: LEnvironment): Validated<Error, Unit> {
             stack.push(ByteCode.Literal.Nil)
@@ -259,6 +261,51 @@ object ByteInstructions {
                     .valueOr { return it.invalid() }
 
             stack.push(instructions)
+
+            return Unit.valid()
+        }
+    }
+
+    data object Sel : ByteCode.Instruction {
+        override fun process(stack: LStack, dump: LDump, code: LCodeQueue, env: LEnvironment): Validated<Error, Unit> {
+            if (stack.size < 1) {
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+            }
+
+            val arg0 = stack.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
+            val ifTrue = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
+            val ifFalse = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
+
+            val restOfProgram = ByteCode.CodeBlock(code.toImmutableList())
+            dump.push(restOfProgram)
+            code.clear()
+
+            when (arg0) {
+                ByteCode.Literal.True ->
+                    code.addAll(ifTrue.instructions)
+
+                ByteCode.Literal.False ->
+                    code.addAll(ifFalse.instructions)
+
+                else ->
+                    return Error.ExecutionError.IfOnOtherValue(arg0.value).invalid()
+            }
+
+            return Unit.valid()
+        }
+    }
+
+    data object Join : ByteCode.Instruction {
+        override fun process(stack: LStack, dump: LDump, code: LCodeQueue, env: LEnvironment): Validated<Error, Unit> {
+            if (code.isNotEmpty()) {
+                return Error.ExecutionError.CodeNotEmptyOnJoin(code.size).invalid()
+            }
+            if (dump.isEmpty()) {
+                return Error.ExecutionError.NothingToTakeFromDump.invalid()
+            }
+
+            val toRestore = dump.pop()
+            code.addAll(toRestore.instructions)
 
             return Unit.valid()
         }

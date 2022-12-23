@@ -247,4 +247,32 @@ class VirtualMachineImplTest : ShouldSpec({
             writer.toString() shouldBe "nil\n"
         }
     }
+
+    context("How to interpret non-linear control flow?") {
+        should("If literals") {
+            executeAndTest("(if 1 42 69)", listOf(ByteCode.Literal.Integer(42)))
+            executeAndTest("(if 0 42 69)", listOf(ByteCode.Literal.Integer(69)))
+            executeAndTest(
+                "(if 1 42 69) (if 0 42 69)",
+                listOf(
+                    ByteCode.Literal.Integer(42),
+                    ByteCode.Literal.Integer(69),
+                )
+            )
+            executeAndTest("(if (eq? 1 1) 42 69)", listOf(ByteCode.Literal.Integer(42)))
+            executeAndTest("(if (eq? 1 2) 42 69)", listOf(ByteCode.Literal.Integer(69)))
+        }
+        should("If nested") {
+            executeAndTest(
+                """
+                    (if (eq? (/ 10 3) 3)
+                        (if (< 1 2)
+                            (+ 52 -10)
+                            0)
+                        (cons 1 nil))
+                """,
+                listOf(ByteCode.Literal.Integer(42)),
+            )
+        }
+    }
 })

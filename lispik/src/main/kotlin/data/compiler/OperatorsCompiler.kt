@@ -9,7 +9,8 @@ import domain.model.ByteInstructions
 import domain.model.Error
 import domain.model.Node
 
-fun Node.Nullary.compile(): Validated<Error, ByteCode.CodeBlock> {
+@Suppress("UNUSED_PARAMETER")
+fun Node.Nullary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
 
     val inst = when (this) {
         Node.Nullary.Read -> ByteInstructions.Read
@@ -18,8 +19,8 @@ fun Node.Nullary.compile(): Validated<Error, ByteCode.CodeBlock> {
     return listOf(inst).flatten().valid()
 }
 
-fun Node.Unary.compile(): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile().valueOr { return it.invalid() }
+fun Node.Unary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
+    val c0 = arg0.compile(context).valueOr { return it.invalid() }
 
     val inst = when (this) {
         is Node.Unary.Car -> ByteInstructions.Car
@@ -33,9 +34,9 @@ fun Node.Unary.compile(): Validated<Error, ByteCode.CodeBlock> {
     return listOf(c0, inst).flatten().valid()
 }
 
-fun Node.Binary.compile(): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile().valueOr { return it.invalid() }
-    val c1 = arg1.compile().valueOr { return it.invalid() }
+fun Node.Binary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
+    val c0 = arg0.compile(context).valueOr { return it.invalid() }
+    val c1 = arg1.compile(context).valueOr { return it.invalid() }
 
     val inst = when (this) {
         is Node.Binary.Add -> ByteInstructions.MathBinary.Add
@@ -51,10 +52,10 @@ fun Node.Binary.compile(): Validated<Error, ByteCode.CodeBlock> {
     return listOf(c0, c1, inst).flatten().valid()
 }
 
-fun Node.Ternary.compile(): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile().valueOr { return it.invalid() }
-    val c1 = arg1.compile().valueOr { return it.invalid() }
-    val c2 = arg2.compile().valueOr { return it.invalid() }
+fun Node.Ternary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
+    val c0 = arg0.compile(context).valueOr { return it.invalid() }
+    val c1 = arg1.compile(context).valueOr { return it.invalid() }
+    val c2 = arg2.compile(context).valueOr { return it.invalid() }
 
     when (this) {
         is Node.Ternary.If -> {

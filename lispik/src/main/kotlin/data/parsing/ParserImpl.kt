@@ -9,21 +9,20 @@ import domain.model.Error
 import domain.model.LToken
 import domain.model.Node
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableMap
-import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toImmutableList
 
 typealias Tokens = TokenIterator
 
 data class GlobalScope(
-    val functions: ImmutableMap<String, Node>,
+    val functions: ImmutableList<Node.Closures.DeFun>,
     val expressions: ImmutableList<Node>,
 )
 
 fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
-    val functions = mutableMapOf<String, Node>()
+    val foundFunc = mutableSetOf<String>()
+    val functions = mutableListOf<Node.Closures.DeFun>()
     val expressions = mutableListOf<Node>()
 
     while (true) {
@@ -34,7 +33,11 @@ fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
 
         parseExpression(enableDeFun = true).valueOr { return it.invalid() }.let { expression ->
             if (expression is Node.Closures.DeFun) {
-                functions += expression.name to expression
+                if (foundFunc.contains(expression.name)) {
+                    return Error.ParserError.FunctionDefinedTwice(expression.name).invalid()
+                }
+                foundFunc += expression.name
+                functions += expression
             } else {
                 expressions += expression
             }
@@ -42,8 +45,8 @@ fun Tokens.parseGlobalScope(): Validated<Error, GlobalScope> {
     }
 
     return GlobalScope(
-        functions.toImmutableMap(),
-        expressions.toPersistentList(),
+        functions.toImmutableList(),
+        expressions.toImmutableList(),
     ).valid()
 }
 

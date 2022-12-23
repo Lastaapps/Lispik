@@ -14,7 +14,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.beOfType
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
 
 class ParserImplTest : ShouldSpec({
 
@@ -54,7 +53,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        persistentMapOf(),
+                        persistentListOf(),
                         persistentListOf(
                             Node.Literal.LInteger(1),
                             Node.Literal.LNil,
@@ -89,7 +88,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        persistentMapOf(),
+                        persistentListOf(),
                         persistentListOf(
                             Node.Binary.Cons(
                                 Node.Literal.LInteger(1),
@@ -123,8 +122,8 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        persistentMapOf(
-                            "foo" to Node.Closures.DeFun(
+                        persistentListOf(
+                            Node.Closures.DeFun(
                                 "foo",
                                 persistentListOf(),
                                 Node.Binary.Add(
@@ -132,7 +131,7 @@ class ParserImplTest : ShouldSpec({
                                     Node.Literal.LInteger(2),
                                 ),
                             ),
-                            "bar" to Node.Closures.DeFun(
+                            Node.Closures.DeFun(
                                 "bar",
                                 persistentListOf("x", "y"),
                                 Node.Binary.Add(
@@ -185,7 +184,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        persistentMapOf(),
+                        persistentListOf(),
                         persistentListOf(
                             Node.Closures.Let(
                                 "a",
@@ -226,7 +225,7 @@ class ParserImplTest : ShouldSpec({
                 runParserTest(
                     it,
                     GlobalScope(
-                        persistentMapOf(),
+                        persistentListOf(),
                         persistentListOf(
                             Node.Apply.ApplyOperator(
                                 LToken.Operator.Add,
@@ -264,6 +263,49 @@ class ParserImplTest : ShouldSpec({
                                 Node.Literal.LInteger(3),
                                 Node.Literal.LNil,
                             ),
+                        ),
+                    )
+                )
+            }
+        }
+
+        should("Callable from eval") {
+            """
+                (define (foo x y)
+                    (lambda (z) (+ x (+ y z))))
+
+                (print ((foo 10 20) 30))
+            """.trimIndent().let {
+                runParserTest(
+                    it,
+                    GlobalScope(
+                        persistentListOf(
+                            Node.Closures.DeFun(
+                                "foo",
+                                persistentListOf("x", "y"),
+                                Node.Closures.Lambda(
+                                    persistentListOf("z"),
+                                    Node.Binary.Add(
+                                        Node.VariableSubstitution("x"),
+                                        Node.Binary.Add(
+                                            Node.VariableSubstitution("y"),
+                                            Node.VariableSubstitution("z"),
+                                        )
+                                    )
+                                ),
+                            ),
+                        ),
+                        persistentListOf(
+                            Node.Unary.Print(
+                                Node.Call.ByEvaluation(
+                                    Node.Call.ByName(
+                                        "foo",
+                                        Node.Literal.LInteger(10),
+                                        Node.Literal.LInteger(20),
+                                    ),
+                                    Node.Literal.LInteger(30),
+                                )
+                            )
                         ),
                     )
                 )

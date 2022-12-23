@@ -21,6 +21,7 @@ sealed interface Error {
         data object EndReached : ParserError
         data object DeFunInNonRootScope : ParserError
         data object LiteralsOnly : ParserError
+        data class FunctionDefinedTwice(val name: String) : ParserError
     }
 
     sealed interface ExecutionError : Error {

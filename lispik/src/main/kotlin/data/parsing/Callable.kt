@@ -1,6 +1,7 @@
 package data.parsing
 
 import arrow.core.Validated
+import arrow.core.andThen
 import arrow.core.invalid
 import arrow.core.valueOr
 import domain.model.Error
@@ -14,6 +15,16 @@ fun Tokens.parseCallable(enableDeFun: Boolean = false): Validated<Error, Node> {
     val info = nextToken().valueOr { return it.invalid() }
 
     return when (info.token) {
+
+        is LToken.Bracket.Opened -> {
+            parseCallable(enableDeFun).andThen { res ->
+                requireToken(LToken.Bracket.Closed).map { res }
+            }.andThen { toEval ->
+                parseRemainingExpressions().map { args ->
+                    Node.Call.ByEvaluation(toEval, args)
+                }
+            }
+        }
 
         is LToken.Operator ->
             @Suppress("UNCHECKED_CAST")
@@ -30,7 +41,7 @@ fun Tokens.parseCallable(enableDeFun: Boolean = false): Validated<Error, Node> {
 
                 is FunToken.User ->
                     parseRemainingExpressions().map { args ->
-                        Node.CallByName(funType.name, args)
+                        Node.Call.ByName(funType.name, args)
                     }
             }
         }

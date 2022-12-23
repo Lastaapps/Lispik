@@ -18,7 +18,8 @@ fun Node.Literal.compileLiteral(): ByteCode.Literal =
         Node.Literal.LNil -> ByteCode.Literal.Nil
     }
 
-fun Node.Literal.compile(): Validated<Error, ByteCode.CodeBlock> =
+@Suppress("UNUSED_PARAMETER")
+fun Node.Literal.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =
     listOf(ByteInstructions.Ldc, compileLiteral()).flatten().valid()
 
 fun ByteCode.Literal.unwrap(): String =

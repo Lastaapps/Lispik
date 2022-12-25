@@ -3,6 +3,8 @@ package domain.model
 import kotlin.reflect.KClass
 
 sealed interface Error {
+//    val throwable : Array<out StackTraceElement> = Thread.currentThread().getStackTrace()
+
     sealed interface TokenError : Error {
         val pos: Position
 
@@ -22,6 +24,12 @@ sealed interface Error {
         data object DeFunInNonRootScope : ParserError
         data object LiteralsOnly : ParserError
         data class FunctionDefinedTwice(val name: String) : ParserError
+    }
+
+    sealed interface CompilerError : Error {
+        val node: Node
+
+        data class NotFoundByName(override val node: Node) : CompilerError
     }
 
     sealed interface ExecutionError : Error {
@@ -68,9 +76,32 @@ sealed interface Error {
                 get() = ByteInstructions.Join
         }
 
+        data class CannotRestoreOldContext(override val instruction: ByteCode) : ExecutionError
+
         data object NothingToTakeFromDump : ExecutionError {
             override val instruction: ByteCode
                 get() = ByteInstructions.Join
         }
+
+        data object InvalidEnvTargetFormat : ExecutionError {
+            override val instruction: ByteCode
+                get() = ByteInstructions.Ld
+        }
+
+        data object ListWrongFormatOrIndexOfBound : ExecutionError {
+            override val instruction: ByteCode
+                get() = ByteInstructions.Ld
+        }
+
+        data object RemovedEnvInsteadOfDummy : ExecutionError {
+            override val instruction: ByteCode
+                get() = ByteInstructions.Rap
+        }
+
+        data object ClosureRequiredForPathing : ExecutionError {
+            override val instruction: ByteCode
+                get() = ByteInstructions.Rap
+        }
+
     }
 }

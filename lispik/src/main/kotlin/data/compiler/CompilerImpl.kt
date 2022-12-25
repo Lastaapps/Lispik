@@ -7,9 +7,12 @@ import arrow.core.valueOr
 import data.parsing.GlobalScope
 import domain.Compiler
 import domain.model.ByteCode
+import domain.model.ByteInstructions
 import domain.model.Error
 import domain.model.Node
+import domain.model.protect
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 
@@ -17,9 +20,9 @@ import kotlinx.collections.immutable.toPersistentList
  * Holds function/variable/parameter names
  * The root one is always the global scope
  */
-typealias CompilationContext = ImmutableList<ImmutableList<String>>
+typealias CompilationContext = PersistentList<ImmutableList<String>>
 
-fun Node.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =
+fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =
     when (this) {
         is Node.Literal -> compile(context)
 
@@ -29,25 +32,42 @@ fun Node.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlo
         is Node.Ternary -> compile(context)
 
         is Node.Apply -> TODO()
-        is Node.Call -> TODO()
-        is Node.Closures.DeFun -> TODO()
-        is Node.Closures.Lambda -> TODO()
-        is Node.Closures.Let -> TODO()
+        is Node.Call -> compile(context)
+        is Node.Closures.DeFun -> compile(context)
+        is Node.Closures.Lambda -> compile(context)
+        is Node.Closures.Let -> compile(context)
         is Node.Closures.LetRec -> TODO()
-        is Node.VariableSubstitution -> TODO()
+        is Node.VariableSubstitution -> compile(context)
     }
 
 class CompilerImpl : Compiler {
-    override fun compile(scope: GlobalScope): Validated<Error, ByteCode.CodeBlock> {
-        return scope.expressions
-            .map { expr ->
-                val rootContext: CompilationContext = persistentListOf(
-                    scope.functions.map { it.name }.toPersistentList()
-                )
 
-                expr.compile(rootContext).valueOr { return it.invalid() }
+    override fun compile(scope: GlobalScope): Validated<Error, ByteCode.CodeBlock> {
+        val rootContext: CompilationContext = persistentListOf(
+            scope.functions.map { it.name }.toPersistentList()
+        )
+
+        // creating global env
+        val globalEnv = scope.functions.map { func ->
+            func.compileDispatcher(rootContext).valueOr { return it.invalid() }
+        }.reversed()
+            .map { listOf(ByteInstructions.Ldf, it.protect(), ByteInstructions.Cons) }
+            .flatten()
+            .let { listOf(ByteInstructions.Nil) + it }
+            .flatten()
+
+        val expressions = scope.expressions
+            .map { expr ->
+                expr.compileDispatcher(rootContext).valueOr { return it.invalid() }
             }
             .flatten()
-            .valid()
+
+        return listOf(
+            globalEnv,
+            ByteInstructions.Ldf,
+            expressions.protect(),
+            // listOf(expressions, ByteInstructions.Rtn).flatten().protect(),
+            ByteInstructions.Ap,
+        ).flatten().valid()
     }
 }

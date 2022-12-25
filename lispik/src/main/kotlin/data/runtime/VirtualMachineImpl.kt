@@ -7,7 +7,7 @@ import arrow.core.valid
 import domain.VirtualMachine
 import domain.model.ByteCode
 import domain.model.Error
-import domain.model.LCodeQueue
+import domain.model.LCode
 import domain.model.LDump
 import domain.model.LEnvironment
 import domain.model.LStack
@@ -18,10 +18,10 @@ class VirtualMachineImpl : VirtualMachine {
     override fun runCode(srcCode: ByteCode.CodeBlock): Validated<Error, ImmutableList<ByteCode.Literal>> {
         val stack = LStack()
         val dump = LDump()
-        val code = LCodeQueue().also {
+        val code = LCode().also {
             it.addAll(srcCode.instructions)
         }
-        val env = LEnvironment
+        val env = LEnvironment()
 
         debugPrint(stack, dump, code, env)
 
@@ -39,11 +39,11 @@ class VirtualMachineImpl : VirtualMachine {
         return stack.toImmutableList().valid()
     }
 
-    private fun debugPrint(stack: LStack, dump: LDump, code: LCodeQueue, env: LEnvironment) {
+    private fun debugPrint(stack: LStack, dump: LDump, code: LCode, env: LEnvironment) {
         println("----------------------------------------------------------------")
         println("Stack: $stack")
         println("Dump:  $dump")
         println("Code:  $code")
-        // println("Env:   $env")
+        println("Env:   $env")
     }
 }

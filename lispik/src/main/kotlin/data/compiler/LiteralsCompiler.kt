@@ -27,6 +27,7 @@ fun ByteCode.Literal.unwrap(): String =
         is ByteCode.Literal.Integer -> value.toString()
         is ByteCode.Literal.LPair -> "(" + toList() + ")"
         ByteCode.Literal.Nil -> "nil"
+        is ByteCode.Literal.Closure -> "closure"
     }
 
 private fun ByteCode.Literal.LPair.toList(): String {
@@ -34,12 +35,14 @@ private fun ByteCode.Literal.LPair.toList(): String {
         is ByteCode.Literal.Integer -> car.value.toString()
         is ByteCode.Literal.LPair -> "(" + car.toList() + ")"
         ByteCode.Literal.Nil -> ""
+        is ByteCode.Literal.Closure -> "closure"
     }
 
     val c2 = when (cdr) {
         is ByteCode.Literal.Integer -> ".${cdr.value}"
         is ByteCode.Literal.LPair -> " " + cdr.toList()
         ByteCode.Literal.Nil -> ""
+        is ByteCode.Literal.Closure -> ".closure"
     }
 
     return c1 + c2

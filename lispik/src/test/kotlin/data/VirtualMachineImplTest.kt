@@ -275,4 +275,220 @@ class VirtualMachineImplTest : ShouldSpec({
             )
         }
     }
+
+    context("How to implement function application?") {
+        context("Let") {
+            should("Basic") {
+                executeAndTest(
+                    "(let (x 1) x)",
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Two lets following") {
+                executeAndTest(
+                    "(let (x 1) x) (let (x 2) x)",
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.Integer(2),
+                )
+            }
+            should("Calculate value and evaluate body") {
+                executeAndTest(
+                    "(let (x (+ 1 2)) (+ x 3))",
+                    ByteCode.Literal.Integer(6),
+                )
+            }
+            should("Return value") {
+                executeAndTest(
+                    "(+ (let (x 1) x) 42)",
+                    ByteCode.Literal.Integer(43),
+                )
+            }
+            should("Parents variable") {
+                executeAndTest(
+                    "(let (y 1) (let (x 2) y))",
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Shadowing") {
+                executeAndTest(
+                    "(let (x 1) (let (x 2) x))",
+                    ByteCode.Literal.Integer(2),
+                )
+            }
+            should("Unknown variable") {
+                executeAndFail("(let (x 1) (let (x 2) y))")
+            }
+        }
+
+        context("Define") {
+            should("Procedure") {
+                executeAndTest(
+                    """
+                        (define (foo) 1)
+                        (foo)
+                    """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Computing procedure") {
+                executeAndTest(
+                    """
+                        (define (foo) (+ 2 3))
+                        (foo)
+                    """,
+                    ByteCode.Literal.Integer(5),
+                )
+            }
+            should("Two procedures") {
+                executeAndTest(
+                    """
+                        (define (foo) 1)
+                        (define (bar) 2)
+                        (foo)
+                        (bar)
+                        (foo)
+                    """,
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.Integer(2),
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Same name") {
+                executeAndFail(
+                    """
+                        (define (foo) 1)
+                        (define (bar) 2)
+                        (define (bar) 2)
+                        (foo)
+                    """,
+                )
+            }
+            should("No call") {
+                executeAndTest(
+                    """
+                        (define (foo) 1)
+                        (define (bar) 2)
+                    """,
+                )
+            }
+
+            should("Args") {
+                executeAndTest(
+                    """
+                        (define (foo x) x)
+                        (foo 1)
+                    """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Args computation") {
+                executeAndTest(
+                    """
+                        (define (foo x) (+ x 2))
+                        (foo 1)
+                    """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+            should("Args computation more args") {
+                executeAndTest(
+                    """
+                        (define (foo x y) (+ x y))
+                        (foo 1 2)
+                    """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+            should("Unknown args") {
+                executeAndFail(
+                    """
+                        (define (foo x y) (+ a y))
+                        (foo 1 2)
+                    """,
+                )
+            }
+            // may work, no way to check with current bytecode
+            should("To many args") {
+                executeAndFail(
+                    """
+                        (define (foo x y) (+ a y))
+                        (foo 1 2 3)
+                    """,
+                )
+            }
+            should("To few args") {
+                executeAndFail(
+                    """
+                        (define (foo x y) (+ a y))
+                        (foo 1)
+                    """,
+                )
+            }
+            should("No args") {
+                executeAndFail(
+                    """
+                        (define (foo x y) (+ a y))
+                        (foo)
+                    """,
+                )
+            }
+            should("No function defined") {
+                executeAndFail(
+                    """
+                        (define (bar x y) (+ a y))
+                        (foo)
+                    """,
+                )
+            }
+
+
+            should("Call another fun above") {
+                executeAndTest(
+                    """
+                        (define (bar x) x)
+                        (define (foo x) (bar x))
+                        (foo 1)
+                    """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Call another fun below") {
+                executeAndTest(
+                    """
+                        (define (foo x) (bar x))
+                        (define (bar x) x)
+                        (foo 1)
+                    """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Call and eval another fun above") {
+                executeAndTest(
+                    """
+                        (define (bar x y) (+ x y))
+                        (define (foo x y) (+ (bar x 4) y))
+                        (foo 1 2)
+                    """,
+                    ByteCode.Literal.Integer(7),
+                )
+            }
+            should("Call and eval another fun below") {
+                executeAndTest(
+                    """
+                        (define (foo x y) (+ (bar x 4) y))
+                        (define (bar x y) (+ x y))
+                        (foo 1 2)
+                    """,
+                    ByteCode.Literal.Integer(7),
+                )
+            }
+        }
+
+        context("Lambda") {}
+        context("Calling from eval/variable") {}
+    }
+
+    context("How to implement recursive functions?") {
+
+    }
 })

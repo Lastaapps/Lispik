@@ -20,7 +20,7 @@ fun Node.Nullary.compile(context: CompilationContext): Validated<Error, ByteCode
 }
 
 fun Node.Unary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile(context).valueOr { return it.invalid() }
+    val c0 = arg0.compileDispatcher(context).valueOr { return it.invalid() }
 
     val inst = when (this) {
         is Node.Unary.Car -> ByteInstructions.Car
@@ -35,8 +35,8 @@ fun Node.Unary.compile(context: CompilationContext): Validated<Error, ByteCode.C
 }
 
 fun Node.Binary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile(context).valueOr { return it.invalid() }
-    val c1 = arg1.compile(context).valueOr { return it.invalid() }
+    val c0 = arg0.compileDispatcher(context).valueOr { return it.invalid() }
+    val c1 = arg1.compileDispatcher(context).valueOr { return it.invalid() }
 
     val inst = when (this) {
         is Node.Binary.Add -> ByteInstructions.MathBinary.Add
@@ -49,13 +49,13 @@ fun Node.Binary.compile(context: CompilationContext): Validated<Error, ByteCode.
         is Node.Binary.IsEqual -> ByteInstructions.IsEqual
     }
 
-    return listOf(c0, c1, inst).flatten().valid()
+    return listOf(c1, c0, inst).flatten().valid()
 }
 
 fun Node.Ternary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val c0 = arg0.compile(context).valueOr { return it.invalid() }
-    val c1 = arg1.compile(context).valueOr { return it.invalid() }
-    val c2 = arg2.compile(context).valueOr { return it.invalid() }
+    val c0 = arg0.compileDispatcher(context).valueOr { return it.invalid() }
+    val c1 = arg1.compileDispatcher(context).valueOr { return it.invalid() }
+    val c2 = arg2.compileDispatcher(context).valueOr { return it.invalid() }
 
     when (this) {
         is Node.Ternary.If -> {

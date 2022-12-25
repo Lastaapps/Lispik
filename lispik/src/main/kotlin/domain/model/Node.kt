@@ -5,8 +5,12 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
 
 sealed interface Node {
+    sealed interface Named : Node {
+        val name: String
+    }
+
     sealed interface Call : Node {
-        data class ByName(val name: String, val args: ImmutableList<Node>) : Call {
+        data class ByName(override val name: String, val args: ImmutableList<Node>) : Call, Named {
             constructor(name: String, vararg args: Node) : this(name, args.toList().toImmutableList())
         }
 
@@ -15,7 +19,7 @@ sealed interface Node {
         }
     }
 
-    data class VariableSubstitution(val name: String) : Node
+    data class VariableSubstitution(override val name: String) : Node, Named
 
     sealed interface Nullary : Node {
         data object Read : Nullary

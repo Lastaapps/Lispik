@@ -27,9 +27,8 @@ sealed interface Error {
     }
 
     sealed interface CompilerError : Error {
-        val node: Node
-
-        data class NotFoundByName(override val node: Node) : CompilerError
+        data class NotFoundByName(val node: Node) : CompilerError
+        data object FunctionsUsedWithoutGlobalEnv : CompilerError
     }
 
     sealed interface ExecutionError : Error {
@@ -65,11 +64,6 @@ sealed interface Error {
         ) : ExecutionError
 
         data class NonInstructionOccurred(override val instruction: ByteCode) : ExecutionError
-
-        data class IfOnOtherValue(val value: Int) : ExecutionError {
-            override val instruction: ByteCode
-                get() = ByteInstructions.Sel
-        }
 
         data class CodeNotEmptyOnJoin(val itemsLeft: Int) : ExecutionError {
             override val instruction: ByteCode

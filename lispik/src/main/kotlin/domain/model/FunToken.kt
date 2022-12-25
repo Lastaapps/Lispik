@@ -12,7 +12,7 @@ sealed interface FunToken {
         IsPair("pair?"),
         IsAtom("atom?"),
         IsNil("nil?", "null?"),
-        Lambda("lambda"),
+        Lambda("lambda", "λ"),
         Apply("apply"),
         Let("let"),
         LetRec("letrec"),

@@ -58,7 +58,19 @@ private fun Node.Call.ByName.compile(context: CompilationContext): Validated<Err
 }
 
 private fun Node.Call.ByEvaluation.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    TODO("Not implemented")
+    val coordinate = toEval.compileDispatcher(context).valueOr { return it.invalid() }
+
+    val arguments = args.asReversed().map { node ->
+        node.compileDispatcher(context).valueOr { return it.invalid() }
+    }.map {
+        listOf(
+            it,
+            ByteInstructions.Cons,
+        ).flatten()
+    }
+    val call = listOf(coordinate, ByteInstructions.Ap)
+
+    return (listOf(ByteInstructions.Nil) + arguments + call).flatten().valid()
 }
 
 fun Node.VariableSubstitution.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {

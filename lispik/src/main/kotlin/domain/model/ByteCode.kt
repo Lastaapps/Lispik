@@ -21,11 +21,15 @@ sealed interface Dumpable {
         val stack: ImmutableList<ByteCode.Literal>,
         val code: ImmutableList<ByteCode>,
         val env: ImmutableList<ImmutableList<ByteCode.Literal>>
-    ) : Dumpable
+    ) : Dumpable {
+        override fun toString(): String = "(s=$stack, c=$code, e=$env)"
+    }
 
     data class Code(
         val code: ImmutableList<ByteCode>,
-    ) : Dumpable
+    ) : Dumpable {
+        override fun toString(): String = "(c=$code)"
+    }
 }
 
 fun ByteCode.protect() = ByteCode.CodeBlock(this)
@@ -35,7 +39,7 @@ sealed interface ByteCode {
     data class CodeBlock(val instructions: ImmutableList<ByteCode>) : ByteCode {
         constructor(vararg instructions: ByteCode) : this(instructions.toList().toImmutableList())
 
-        override fun toString(): String = "CB($instructions)"
+        override fun toString(): String = "(${instructions.joinToString(separator = ", ")})"
     }
 
     sealed interface Instruction : ByteCode {

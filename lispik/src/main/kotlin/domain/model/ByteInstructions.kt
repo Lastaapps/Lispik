@@ -293,14 +293,11 @@ object ByteInstructions {
             code.clear()
 
             when (arg0) {
-                ByteCode.Literal.True ->
-                    code.addAll(ifTrue.instructions)
-
                 ByteCode.Literal.False ->
                     code.addAll(ifFalse.instructions)
 
                 else ->
-                    return Error.ExecutionError.IfOnOtherValue(arg0.value).invalid()
+                    code.addAll(ifTrue.instructions)
             }
 
             return Unit.valid()

@@ -42,10 +42,14 @@ fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCo
 
 class CompilerImpl : Compiler {
 
-    override fun compile(scope: GlobalScope): Validated<Error, ByteCode.CodeBlock> {
+    override fun compile(scope: GlobalScope, createGlobalEnv: Boolean): Validated<Error, ByteCode.CodeBlock> {
         val rootContext: CompilationContext = persistentListOf(
             scope.functions.map { it.name }.toPersistentList()
         )
+
+        if (!createGlobalEnv && scope.functions.isNotEmpty()) {
+            return Error.CompilerError.FunctionsUsedWithoutGlobalEnv.invalid()
+        }
 
         // creating global env
         val globalEnv = scope.functions.map { func ->
@@ -62,12 +66,15 @@ class CompilerImpl : Compiler {
             }
             .flatten()
 
-        return listOf(
-            globalEnv,
-            ByteInstructions.Ldf,
-            expressions.protect(),
-            // listOf(expressions, ByteInstructions.Rtn).flatten().protect(),
-            ByteInstructions.Ap,
-        ).flatten().valid()
+        return if (createGlobalEnv) {
+            listOf(
+                globalEnv,
+                ByteInstructions.Ldf,
+                expressions.protect(),
+                ByteInstructions.Ap,
+            ).flatten()
+        } else {
+            expressions
+        }.valid()
     }
 }

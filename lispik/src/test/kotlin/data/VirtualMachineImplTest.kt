@@ -482,10 +482,95 @@ class VirtualMachineImplTest : ShouldSpec({
                     ByteCode.Literal.Integer(7),
                 )
             }
+            should("Factorial") {
+                executeAndTest(
+                    """
+                    (define (fact n)
+                      (if (eq? n 0)
+                          1
+                          (* n (fact (- n 1)))))
+                    (fact 0)
+                    (fact 1)
+                    (fact 2)
+                    (fact 3)
+                """,
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.Integer(2),
+                    ByteCode.Literal.Integer(6),
+                )
+            }
         }
 
-        context("Lambda") {}
-        context("Calling from eval/variable") {}
+        context("Lambda") {
+            should("No args") {
+                executeAndTest(
+                    """
+                    ((lambda () 1))
+                """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Identity") {
+                executeAndTest(
+                    """
+                    ((lambda (x) x) 1)
+                """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("With eval") {
+                executeAndTest(
+                    """
+                    ((lambda (x) (+ x 2)) 1)
+                """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+            should("More args") {
+                executeAndTest(
+                    """
+                    ((lambda (x y) (- x y)) 1 2)
+                """,
+                    ByteCode.Literal.Integer(-1),
+                )
+            }
+            should("Store in variable") {
+                executeAndTest(
+                    """
+                        (let (l (lambda () 1)) (l))
+                    """,
+                    ByteCode.Literal.Integer(1),
+                )
+            }
+            should("Store in variable with eval") {
+                executeAndTest(
+                    """
+                        (let (l (lambda (x) (+ x 2))) (l 1))
+                    """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+            should("Returned from fun") {
+                executeAndTest(
+                    """
+                        (define (foo a) (lambda (x) (+ x a)))
+                        ((foo 1) 2)
+                    """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+            should("Returned from lambda") {
+                executeAndTest(
+                    """
+                        (((lambda (x)
+                            (lambda (y) (+ x y))
+                        ) 1) 2)
+                    """,
+                    ByteCode.Literal.Integer(3),
+                )
+            }
+        }
     }
 
     context("How to implement recursive functions?") {

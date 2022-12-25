@@ -68,3 +68,15 @@ fun Node.Ternary.compile(context: CompilationContext): Validated<Error, ByteCode
         }
     }
 }
+
+fun Node.Nnary.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
+    val compiled = args.asReversed().map {
+        it.compileDispatcher(context).valueOr { arg -> return arg.invalid() }
+    }
+    return when (this) {
+        is Node.Nnary.ListNode -> {
+            val consCells = compiled.map { listOf(it, ByteInstructions.Cons) }.flatten()
+            (listOf(ByteInstructions.Nil) + consCells).flatten().valid()
+        }
+    }
+}

@@ -113,6 +113,38 @@ class ParserImplTest : ShouldSpec({
         }
 
 
+        should("List") {
+            """
+                (list)
+                (list 1 2 3)
+                (list 1 2 (+ 1 2))
+            """.let {
+                runParserTest(
+                    it,
+                    GlobalScope(
+                        persistentListOf(),
+                        persistentListOf(
+                            Node.Nnary.ListNode(),
+                            Node.Nnary.ListNode(
+                                Node.Literal.LInteger(1),
+                                Node.Literal.LInteger(2),
+                                Node.Literal.LInteger(3),
+                            ),
+                            Node.Nnary.ListNode(
+                                Node.Literal.LInteger(1),
+                                Node.Literal.LInteger(2),
+                                Node.Binary.Add(
+                                    Node.Literal.LInteger(1),
+                                    Node.Literal.LInteger(2),
+                                )
+                            ),
+                        ),
+                    )
+                )
+            }
+        }
+
+
         should("Function definition") {
             """
                 (defun (foo) (+ 1 2))

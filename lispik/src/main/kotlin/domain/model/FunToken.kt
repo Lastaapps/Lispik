@@ -19,6 +19,7 @@ sealed interface FunToken {
         DeFun("defun", "def", "define"),
         Print("print"),
         Read("read"),
+        List("list"),
     }
 
     data class User(val name: String) : FunToken

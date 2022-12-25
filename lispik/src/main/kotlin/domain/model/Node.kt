@@ -58,6 +58,14 @@ sealed interface Node {
         data class If(override val arg0: Node, override val arg1: Node, override val arg2: Node) : Ternary
     }
 
+    sealed interface Nnary : Node {
+        val args: List<Node>
+
+        data class ListNode(override val args: List<Node>) : Nnary {
+            constructor(vararg args: Node) : this(args.toList().toImmutableList())
+        }
+    }
+
     sealed interface Closures : Node {
         val body: Node
 

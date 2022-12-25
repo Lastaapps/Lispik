@@ -115,4 +115,8 @@ fun Tokens.parseBuildIn(token: FunToken.BuiltIn): Validated<Error, Node> =
             }
 
         FunToken.BuiltIn.Apply -> parseApply()
+
+        FunToken.BuiltIn.List ->
+            parseRemainingExpressions()
+                .map { Node.Nnary.ListNode(it) }
     }

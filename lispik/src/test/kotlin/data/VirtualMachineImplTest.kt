@@ -187,6 +187,39 @@ class VirtualMachineImplTest : ShouldSpec({
         }
 
 
+
+        should("List") {
+            executeAndTest(
+                """
+                (list)
+                (list 1 2 3)
+                (list 1 2 (+ 1 2))
+            """,
+                ByteCode.Literal.Nil,
+                ByteCode.Literal.LPair(
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.LPair(
+                        ByteCode.Literal.Integer(2),
+                        ByteCode.Literal.LPair(
+                            ByteCode.Literal.Integer(3),
+                            ByteCode.Literal.Nil,
+                        )
+                    )
+                ),
+                ByteCode.Literal.LPair(
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.LPair(
+                        ByteCode.Literal.Integer(2),
+                        ByteCode.Literal.LPair(
+                            ByteCode.Literal.Integer(3),
+                            ByteCode.Literal.Nil,
+                        )
+                    )
+                ),
+            )
+        }
+
+
         should("Print, read - int") {
             val reader = BufferedReader(StringReader("1"))
             val writer = StringWriter()

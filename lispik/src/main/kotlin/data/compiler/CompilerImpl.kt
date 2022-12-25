@@ -30,6 +30,7 @@ fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCo
         is Node.Unary -> compile(context)
         is Node.Binary -> compile(context)
         is Node.Ternary -> compile(context)
+        is Node.Nnary -> compile(context)
 
         is Node.Apply -> TODO()
         is Node.Call -> compile(context)

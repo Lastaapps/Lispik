@@ -58,7 +58,7 @@ class TokenizerImplTest : FunSpec({
         }
         test("Keywords") {
 
-            val input = "pair? eq? atom? null? nil? def defun define"
+            val input = "pair? eq? atom? null? nil? def defun define list"
             println("Running test for '$input'")
 
             val tokens = Tokenizer.from(input)
@@ -75,6 +75,7 @@ class TokenizerImplTest : FunSpec({
                 FunToken.BuiltIn.DeFun,
                 FunToken.BuiltIn.DeFun,
                 FunToken.BuiltIn.DeFun,
+                FunToken.BuiltIn.List,
             ).zip(tokens) { ref, actual ->
                 actual should beInstanceOf<LToken.Text>()
                 ref shouldBe (actual as LToken.Text).tryMatchFun()

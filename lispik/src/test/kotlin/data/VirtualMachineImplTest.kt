@@ -14,6 +14,7 @@ import domain.model.Error
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldBeEmpty
 import io.kotest.matchers.types.beInstanceOf
 import java.io.BufferedReader
 import java.io.PrintWriter
@@ -37,7 +38,8 @@ class VirtualMachineImplTest : ShouldSpec({
                 VirtualMachine.from()
                     .runCode(code, debug = true, globalEnv = true)
             }
-            .also { println("Result:\n$it") }
+            .tap { println("Result:\n$it") }
+            .tapInvalid { println("Result:\n$it") }
 
     fun executeAndTest(input: String, expected: List<ByteCode.Literal>) {
         execute(input).let { actual ->
@@ -244,64 +246,75 @@ class VirtualMachineImplTest : ShouldSpec({
         }
 
 
-        should("Print, read - int") {
-            val reader = BufferedReader(StringReader("1"))
-            val writer = StringWriter()
-            val out = PrintWriter(writer)
+        context("Print, read") {
 
-            ByteInstructions.Read.stream = reader
-            ByteInstructions.Print.testStream = out
+            fun runReadPrintTest(input: String, output: String?, body: () -> Unit) {
+                val reader = BufferedReader(StringReader(input))
+                val writer = StringWriter()
+                val out = PrintWriter(writer)
 
-            executeAndTest("(print (read))", ByteCode.Literal.Integer(1))
-            writer.toString() shouldBe "1\n"
-        }
+                ByteInstructions.Read.stream = reader
+                ByteInstructions.Print.testStream = out
 
-        should("Print, read - list") {
-            val reader = BufferedReader(StringReader("'(1 2 3)"))
-            val writer = StringWriter()
-            val out = PrintWriter(writer)
+                body()
 
-            ByteInstructions.Read.stream = reader
-            ByteInstructions.Print.testStream = out
+                output?.let { writer.toString() shouldBe "$output\n" }
+                    ?: writer.toString().shouldBeEmpty()
+            }
 
-            executeAndTest(
-                "(print (read))",
-                ByteCode.Literal.LPair(
-                    ByteCode.Literal.Integer(1),
-                    ByteCode.Literal.LPair(
-                        ByteCode.Literal.Integer(2),
+            should("Integer") {
+                runReadPrintTest("1", "1") {
+                    executeAndTest("(print (read))", ByteCode.Literal.Integer(1))
+                }
+            }
+
+            should("List") {
+                runReadPrintTest("(1 2 3)", "(1 2 3)") {
+                    executeAndTest(
+                        "(print (read))",
                         ByteCode.Literal.LPair(
-                            ByteCode.Literal.Integer(3),
-                            ByteCode.Literal.Nil,
-                        )
+                            ByteCode.Literal.Integer(1),
+                            ByteCode.Literal.LPair(
+                                ByteCode.Literal.Integer(2),
+                                ByteCode.Literal.LPair(
+                                    ByteCode.Literal.Integer(3),
+                                    ByteCode.Literal.Nil,
+                                )
+                            )
+                        ),
                     )
-                ),
-            )
-            writer.toString() shouldBe "(1 2 3)\n"
-        }
+                }
+            }
 
-        should("Print, read - nil") {
-            val reader = BufferedReader(StringReader("nil"))
-            val writer = StringWriter()
-            val out = PrintWriter(writer)
+            should("Nil") {
+                runReadPrintTest("nil", "nil") {
+                    executeAndTest("(print (read))", ByteCode.Literal.Nil)
+                }
+            }
 
-            ByteInstructions.Read.stream = reader
-            ByteInstructions.Print.testStream = out
+            should("Empty input") {
+                runReadPrintTest("", "nil") {
+                    executeAndTest("(print (read))", ByteCode.Literal.Nil)
+                }
+            }
 
-            executeAndTest("(print (read))", ByteCode.Literal.Nil)
-            writer.toString() shouldBe "nil\n"
-        }
+            should("Two ints") {
+                runReadPrintTest("1 1", null) {
+                    executeAndFail("(print (read))")
+                }
+            }
 
-        should("Print, read - empty") {
-            val reader = BufferedReader(StringReader(""))
-            val writer = StringWriter()
-            val out = PrintWriter(writer)
+            should("Two lists") {
+                runReadPrintTest("(1) (1)", null) {
+                    executeAndFail("(print (read))")
+                }
+            }
 
-            ByteInstructions.Read.stream = reader
-            ByteInstructions.Print.testStream = out
-
-            executeAndTest("(print (read))", ByteCode.Literal.Nil)
-            writer.toString() shouldBe "nil\n"
+            should("Two nils") {
+                runReadPrintTest("nil nil", null) {
+                    executeAndFail("(print (read))")
+                }
+            }
         }
     }
 

@@ -319,14 +319,15 @@ object ByteInstructions {
             val instructions =
                 Parser.from(Tokenizer.from(line))
                     .parseLiterals()
-                    .map {
-                        if (it.size != 1) {
-                            return Error.ExecutionError.ReadInvalidNumberOfTokens(
-                                this@Read, 1, it.size,
-                            ).invalid()
-                        } else it
-                    }
-                    .map { it.first().compileLiteral() }
+//                    .map {
+//                        if (it.size != 1) {
+//                            return Error.ExecutionError.ReadInvalidNumberOfTokens(
+//                                this@Read, 1, it.size,
+//                            ).invalid()
+//                        } else it
+//                    }
+//                    .map { it.first().compileLiteral() }
+                    .map { it.compileLiteral() }
                     .valueOr { return it.invalid() }
 
             code.addAll(0, instructions.instructions)

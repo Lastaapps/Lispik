@@ -13,7 +13,32 @@ import domain.model.tryMatchFun
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 
-private fun Tokens.readLiteralsTillEnd(): Validated<Error, Node.Literal.LList> =
+fun Tokens.readOneLiteral(requireEnd: Boolean): Validated<Error, Node.Literal> =
+    nextToken().andThen { info ->
+        when (info.token) {
+            LToken.Bracket.Opened -> readLiteralsTillEnd()
+
+            is LToken.Number -> Node.Literal.LInteger(info.token.value).valid()
+
+            is LToken.Text ->
+                if (info.token.tryMatchFun() == FunToken.BuiltIn.Nil) {
+                    Node.Literal.LNil.valid()
+                } else {
+                    Error.ParserError.UnexpectedToken(info).invalid()
+                }
+
+            else -> Error.ParserError.UnexpectedToken(info).invalid()
+        }
+    }.andThen { res ->
+        if (requireEnd) {
+            ensureEnd().map { res }
+        } else {
+            res.valid()
+        }
+    }
+
+
+fun Tokens.readLiteralsTillEnd(): Validated<Error, Node.Literal.LList> =
     persistentListOf<Node.Literal>().mutate { res ->
         while (true) {
             val info = nextToken().valueOr { return it.invalid() }

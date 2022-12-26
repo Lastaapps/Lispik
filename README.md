@@ -3,6 +3,7 @@
 ### Task assignment
 
 > TinyLisp je implementace velmi malého lisp-like jazyka. Obsahuje malý, ale funkční, lexer, parser, runtime, garbage kolektor, SECD překladač a jeho VM. Kód je pro vás k dispozici a můžete se na něj podívat.
+> 
 > Vaše aplikace musí:
 > - překládat a interpretovat základní LISPovské konstrukce,
 > - podporovat všechny SECD instrukce (kromě RAP)
@@ -12,7 +13,7 @@
 
 ### Describe which features were implemented.
 
-I have implement both the basic functionality and the extended one.
+I have implement both the basic and the extended functionality.
 
 ## Example usage
 
@@ -32,8 +33,9 @@ Accessing function env is done using the `Ld [-1 . x]`.
 You can disable this behaviour with a flag, but then `defun` cannot be used.
 
 ### Running
+Code is written in Kotlin, compile JVM version is set to **Java 11**.
 You can run the generated jar using the `run.sh args` script for better convenience.
-To view all the options (just for fun), run `run.sh -h`.
+To view all the options, run `run.sh -h`.
 The script opens REPL by default, it accepts a filename as argument to load functions from.
 Also, expressions in that files are evaluated and printed.
 This is the only way to load functions, REPL will show an error if you try to do it later.
@@ -74,16 +76,8 @@ and therefore the syntax is only with one bracket pair.*
 ./run.sh lispik/examples/read-print.lsp
 ```
 
-// TODO read list without quote
-// TODO let (if so, remove a notice above)
-// TODO check TODO
-
 ## Sources
  - https://courses.fit.cvut.cz/BIE-PPA/files/lectures/BIE-PPA-7.pdf
  - https://gitlab.fit.cvut.cz/BI-PPA/bi-ppa
  - https://gitlab.fit.cvut.cz/majpetr/tinylisp
  - Peter Kogge: Architecture of Symbolic Computers
-
-
-
-

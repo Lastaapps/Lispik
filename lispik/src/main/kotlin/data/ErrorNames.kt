@@ -25,7 +25,7 @@ fun Error.ParserError.getMessage(): String = when (this) {
     is Error.ParserError.FunctionDefinedTwice -> "Function '$name' is already defined"
     is Error.ParserError.InvalidNumberOfArgumentsBuildIn -> "Expected $expected, got $got while handling build-in $token"
     is Error.ParserError.InvalidNumberOfArgumentsOperator -> "Expected $expected, got $got while handling operator $token"
-    Error.ParserError.LiteralsOnly -> "Only literals are allowed"
+    Error.ParserError.OnlyOneExpressionAllowed -> "Only one expression allowed"
     is Error.ParserError.NameMissing -> "Name is missing for ${token.token} at ${token.position}"
     is Error.ParserError.UnexpectedToken -> "An unexpected token occurred: ${token.token} at ${token.position}"
 }

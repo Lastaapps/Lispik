@@ -25,7 +25,7 @@ sealed interface Error {
         data object ApplyEmpty : ParserError
         data object EndReached : ParserError
         data object DeFunInNonRootScope : ParserError
-        data object LiteralsOnly : ParserError
+        data object OnlyOneExpressionAllowed : ParserError
         data class FunctionDefinedTwice(val name: String) : ParserError
         data object ApplyTargetMissingOrInvalid : ParserError
     }

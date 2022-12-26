@@ -6,6 +6,8 @@ import domain.model.ByteCode
 import domain.model.Error
 import kotlinx.collections.immutable.ImmutableList
 
+data class VirtualContext(val globalEnvEnabled: Boolean)
+
 interface VirtualMachine {
     fun runCode(
         srcCode: ByteCode.CodeBlock,

@@ -3,6 +3,7 @@ package domain.model
 import arrow.core.Validated
 import arrow.core.invalid
 import arrow.core.valid
+import domain.VirtualContext
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
@@ -45,7 +46,7 @@ sealed interface ByteCode {
     }
 
     sealed interface Instruction : ByteCode {
-        fun process(
+        fun VirtualContext.process(
             stack: LStack,
             dump: LDump,
             code: LCode,

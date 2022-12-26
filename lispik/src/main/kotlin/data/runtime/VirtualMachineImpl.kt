@@ -4,6 +4,7 @@ import arrow.core.Validated
 import arrow.core.handleError
 import arrow.core.invalid
 import arrow.core.valid
+import domain.VirtualContext
 import domain.VirtualMachine
 import domain.model.ByteCode
 import domain.model.Error
@@ -27,15 +28,18 @@ class VirtualMachineImpl() : VirtualMachine {
             it.addAll(srcCode.instructions)
         }
         val env = LEnvironment()
+        val context = VirtualContext(globalEnv)
 
         debugPrint(debug, stack, dump, code, env)
 
         while (code.isNotEmpty()) {
             when (val inst = code.removeFirst()) {
                 is ByteCode.Instruction ->
-                    inst.process(stack, dump, code, env)
-                        .also { debugPrint(debug, stack, dump, code, env) }
-                        .handleError { return it.invalid() }
+                    with(inst) {
+                        context.process(stack, dump, code, env)
+                            .also { debugPrint(debug, stack, dump, code, env) }
+                            .handleError { return it.invalid() }
+                    }
 
                 else -> return Error.ExecutionError.NonInstructionOccurred(inst).invalid()
             }

@@ -8,6 +8,7 @@ import data.compiler.compileLiteral
 import data.compiler.unwrap
 import domain.Parser
 import domain.Tokenizer
+import domain.VirtualContext
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentList
@@ -30,13 +31,19 @@ inline fun <reified T : ByteCode> LCode.popTyped(instruction: ByteCode.Instructi
 object ByteInstructions {
 
     sealed interface MathBinary : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val instruction = this@MathBinary
             if (stack.size < 2) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(instruction, 2, stack.size).invalid()
             }
 
-            val arg0 = stack.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
-            val arg1 = stack.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
+            val arg0 = stack.popTyped<ByteCode.Literal.Integer>(instruction).valueOr { return it.invalid() }
+            val arg1 = stack.popTyped<ByteCode.Literal.Integer>(instruction).valueOr { return it.invalid() }
 
             val res = compute(arg0.value, arg1.value).valueOr { return it.invalid() }
 
@@ -67,7 +74,6 @@ object ByteInstructions {
                 }
         }
 
-        // TODO support lists
         data object Greater : MathBinary {
             override fun compute(arg0: Int, arg1: Int): Validated<Error, Int> =
                 if (arg0 > arg1) {
@@ -88,9 +94,14 @@ object ByteInstructions {
     }
 
     data object Cons : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 2) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@Cons, 2, stack.size).invalid()
             }
 
             val arg0 = stack.pop()
@@ -104,12 +115,17 @@ object ByteInstructions {
     }
 
     data object Car : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@Car, 2, stack.size).invalid()
             }
 
-            val arg0 = stack.popTyped<ByteCode.Literal.LPair>(this).valueOr { return it.invalid() }
+            val arg0 = stack.popTyped<ByteCode.Literal.LPair>(this@Car).valueOr { return it.invalid() }
 
             stack.push(arg0.car)
 
@@ -118,12 +134,17 @@ object ByteInstructions {
     }
 
     data object Cdr : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@Cdr, 2, stack.size).invalid()
             }
 
-            val arg0 = stack.popTyped<ByteCode.Literal.LPair>(this).valueOr { return it.invalid() }
+            val arg0 = stack.popTyped<ByteCode.Literal.LPair>(this@Cdr).valueOr { return it.invalid() }
 
             stack.push(arg0.cdr)
 
@@ -133,7 +154,12 @@ object ByteInstructions {
 
     @Suppress("unused")
     data object Nil : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             stack.push(ByteCode.Literal.Nil)
             return Unit.valid()
         }
@@ -143,17 +169,27 @@ object ByteInstructions {
      * LDC x – pushes constant x on stack
      */
     data object Ldc : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val literal = code.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val literal = code.popTyped<ByteCode.Literal.Integer>(this@Ldc).valueOr { return it.invalid() }
             stack.push(literal)
             return Unit.valid()
         }
     }
 
     data object IsEqual : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@IsEqual, 2, stack.size).invalid()
             }
 
             val arg0 = stack.pop()
@@ -172,9 +208,14 @@ object ByteInstructions {
     }
 
     data object IsNil : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@IsNil, 2, stack.size).invalid()
             }
 
             when (stack.pop()) {
@@ -189,9 +230,14 @@ object ByteInstructions {
     }
 
     data object IsAtom : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@IsAtom, 2, stack.size).invalid()
             }
 
             when (stack.pop()) {
@@ -206,9 +252,14 @@ object ByteInstructions {
     }
 
     data object IsPair : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@IsPair, 2, stack.size).invalid()
             }
 
             when (stack.pop()) {
@@ -226,9 +277,14 @@ object ByteInstructions {
 
         var testStream: PrintWriter? = null
 
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(this@Print, 2, stack.size).invalid()
             }
 
             val literal = stack.peek()
@@ -244,7 +300,12 @@ object ByteInstructions {
 
         var stream: BufferedReader = BufferedReader(InputStreamReader(System.`in`))
 
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
 
             print("[Read]> ")
             val line = stream
@@ -261,7 +322,7 @@ object ByteInstructions {
                     .map {
                         if (it.size != 1) {
                             return Error.ExecutionError.ReadInvalidNumberOfTokens(
-                                this, 1, it.size,
+                                this@Read, 1, it.size,
                             ).invalid()
                         } else it
                     }
@@ -278,14 +339,20 @@ object ByteInstructions {
      * SEL – selects code to execute next based on value on stack
      */
     data object Sel : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val instruction = this@Sel
             if (stack.size < 1) {
-                return Error.ExecutionError.NotEnoughOperandsOnStack(this, 2, stack.size).invalid()
+                return Error.ExecutionError.NotEnoughOperandsOnStack(instruction, 2, stack.size).invalid()
             }
 
-            val arg0 = stack.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
-            val ifTrue = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
-            val ifFalse = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
+            val arg0 = stack.popTyped<ByteCode.Literal.Integer>(instruction).valueOr { return it.invalid() }
+            val ifTrue = code.popTyped<ByteCode.CodeBlock>(instruction).valueOr { return it.invalid() }
+            val ifFalse = code.popTyped<ByteCode.CodeBlock>(instruction).valueOr { return it.invalid() }
 
             val restOfProgram = Dumpable.Code(code.toImmutableList())
             dump.push(restOfProgram)
@@ -307,7 +374,12 @@ object ByteInstructions {
      * JOIN – returns to previously saved code (taken from the dump)
      */
     data object Join : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             if (code.isNotEmpty()) {
                 return Error.ExecutionError.CodeNotEmptyOnJoin(code.size).invalid()
             }
@@ -317,7 +389,7 @@ object ByteInstructions {
 
             val toRestore = dump.pop()
             if (toRestore !is Dumpable.Code) {
-                return Error.ExecutionError.CannotRestoreOldContext(this).invalid()
+                return Error.ExecutionError.CannotRestoreOldContext(this@Join).invalid()
             }
             code.addAll(toRestore.code)
 
@@ -329,8 +401,13 @@ object ByteInstructions {
      * LD (x.y) – loads argument from env and pushes it on stack
      */
     data object Ld : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val (level, index) = code.popTyped<ByteCode.Literal.LPair>(this).valueOr { return it.invalid() }
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val (level, index) = code.popTyped<ByteCode.Literal.LPair>(this@Ld).valueOr { return it.invalid() }
             if (level !is ByteCode.Literal.Integer || index !is ByteCode.Literal.Integer) {
                 return Error.ExecutionError.InvalidEnvTargetFormat.invalid()
             }
@@ -353,10 +430,15 @@ object ByteInstructions {
      * LDF - Takes the code and the current env and pushes closure on stack
      */
     data object Ldf : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val toStore = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val toStore = code.popTyped<ByteCode.CodeBlock>(this@Ldf).valueOr { return it.invalid() }
 
-            stack.push(ByteCode.Literal.Closure.Env(toStore, env.dropLast(1).toPersistentList()))
+            stack.push(ByteCode.Literal.Closure.Env(toStore, env.dropLastIfGlobal(this)))
 
             return Unit.valid()
         }
@@ -366,14 +448,19 @@ object ByteInstructions {
      * AP – takes closure and list of arguments from stack and applies it
      */
     data object Ap : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val closure = stack.popTyped<ByteCode.Literal.Closure>(this).valueOr { return it.invalid() }
-            val args = stack.popTyped<ByteCode.Literal.LList>(this).valueOr { return it.invalid() }
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val closure = stack.popTyped<ByteCode.Literal.Closure>(this@Ap).valueOr { return it.invalid() }
+            val args = stack.popTyped<ByteCode.Literal.LList>(this@Ap).valueOr { return it.invalid() }
 
             val backup = Dumpable.Complete(
                 stack.toImmutableList(),
                 code.toImmutableList(),
-                env.dropLast(1).toPersistentList(),
+                env.dropLastIfGlobal(this),
             )
             dump.push(backup)
 
@@ -381,15 +468,13 @@ object ByteInstructions {
             code.clear()
 
             // Empty if global scope is not used or when it is initialized
-            if (env.isNotEmpty()) {
-                val global = env.last()
-                env.clear()
-                env.push(global)
-            }
+            env.clearRespectingGlobal(this)
 
             code.addAll(closure.code.instructions)
             env.addAll(closure.env)
-            args.toList().tap { env.push(it) }.valueOr { return it.invalid() }
+            args.toList()
+                .tap { env.push(it) }
+                .valueOr { return it.invalid() }
 
             return Unit.valid()
         }
@@ -399,11 +484,16 @@ object ByteInstructions {
      * RTN – returns from a function, returning the last value on stack
      */
     data object Rtn : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             val current = stack.pop()
             val toRestore = dump.pop()
             if (toRestore !is Dumpable.Complete) {
-                return Error.ExecutionError.CannotRestoreOldContext(this).invalid()
+                return Error.ExecutionError.CannotRestoreOldContext(this@Rtn).invalid()
             }
 
             stack.addAll(toRestore.stack)
@@ -411,9 +501,7 @@ object ByteInstructions {
 
             code.addAll(toRestore.code)
 
-            val global = env.last()
-            env.clear()
-            env.push(global)
+            env.clearRespectingGlobal(this)
             env.addAll(toRestore.env)
 
             return Unit.valid()
@@ -424,7 +512,12 @@ object ByteInstructions {
      * DUM – adds dummy environment
      */
     data object Dum : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
             env.push(persistentListOf())
 
             return Unit.valid()
@@ -435,9 +528,14 @@ object ByteInstructions {
      * RAP – patches dummy env to arg-list and applies the function
      */
     data object Rap : ByteCode.Instruction {
-        override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val closure = stack.popTyped<ByteCode.Literal.Closure>(this).valueOr { return it.invalid() }
-            val args = stack.popTyped<ByteCode.Literal.LList>(this).valueOr { return it.invalid() }
+        override fun VirtualContext.process(
+            stack: LStack,
+            dump: LDump,
+            code: LCode,
+            env: LEnvironment
+        ): Validated<Error, Unit> {
+            val closure = stack.popTyped<ByteCode.Literal.Closure>(this@Rap).valueOr { return it.invalid() }
+            val args = stack.popTyped<ByteCode.Literal.LList>(this@Rap).valueOr { return it.invalid() }
             val argsList = args.toList().valueOr { return it.invalid() }
 
             // pop dummy env
@@ -448,7 +546,7 @@ object ByteInstructions {
             val backup = Dumpable.Complete(
                 stack.toImmutableList(),
                 code.toImmutableList(),
-                env.dropLast(1).toPersistentList(), // drop global
+                env.dropLastIfGlobal(this),
             )
             dump.push(backup)
 
@@ -456,11 +554,7 @@ object ByteInstructions {
             code.clear()
 
             // Empty if global scope is not used or when it is initialized
-            if (env.isNotEmpty()) {
-                val global = env.last()
-                env.clear()
-                env.push(global)
-            }
+            env.clearRespectingGlobal(this)
 
             if (closure.env.first().isNotEmpty())
                 return Error.ExecutionError.RemovedEnvInsteadOfDummy.invalid()
@@ -483,4 +577,22 @@ object ByteInstructions {
             return Unit.valid()
         }
     }
+
+    private fun LEnvironment.clearRespectingGlobal(context: VirtualContext) {
+        if (context.globalEnvEnabled) {
+            if (isNotEmpty()) {
+                val global = last()
+                clear()
+                push(global)
+            }
+        } else {
+            clear()
+        }
+    }
+
+    private fun LEnvironment.dropLastIfGlobal(context: VirtualContext) =
+        (if (context.globalEnvEnabled)
+            dropLast(1)
+        else
+            this).toPersistentList()
 }

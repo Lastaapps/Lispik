@@ -47,13 +47,13 @@ class TokenizerImplTest : FunSpec({
         test("Operators") {
             runNextTokenTest(
                 "+ - * / < > ",
-                    LToken.Operator.Add,
-                    LToken.Operator.Sub,
-                    LToken.Operator.Times,
-                    LToken.Operator.Div,
-                    LToken.Operator.Lower,
-                    LToken.Operator.Greater,
-                    LToken.Eof,
+                LToken.Operator.Add,
+                LToken.Operator.Sub,
+                LToken.Operator.Multiply,
+                LToken.Operator.Div,
+                LToken.Operator.Lower,
+                LToken.Operator.Greater,
+                LToken.Eof,
             )
         }
         test("Keywords") {

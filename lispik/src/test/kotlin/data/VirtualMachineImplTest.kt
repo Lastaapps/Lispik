@@ -22,6 +22,8 @@ import java.io.PrintWriter
 import java.io.StringReader
 import java.io.StringWriter
 
+private val VirtualMachineImplTest.Companion.debug get() = false
+
 class VirtualMachineImplTest : ShouldSpec({
 
     fun execute(input: String): Validated<Error, List<ByteCode.Literal>> =
@@ -30,7 +32,7 @@ class VirtualMachineImplTest : ShouldSpec({
             .let { lisp -> Tokenizer.from(lisp) }
             .let { tokenizer -> Parser.from(tokenizer) }
             .let { parser -> parser.parseToAST().valueOr { return it.invalid() } }
-            .let { tree -> Compiler.from().compile(tree).valueOr { return it.invalid() } }
+            .let { tree -> Compiler.from().compile(tree, createGlobalEnv = !debug).valueOr { return it.invalid() } }
             .also { println("Compiled to bytecode:\n$it") }
             .let { code -> VirtualMachine.from().runCode(code).valueOr { return it.invalid() } }
             .also { println("Result:\n$it") }
@@ -52,6 +54,10 @@ class VirtualMachineImplTest : ShouldSpec({
         execute(input).let { actual ->
             actual should beInstanceOf<Invalid<Error>>()
         }
+    }
+
+    should("Not in debug") {
+        debug shouldBe false
     }
 
     context("How to represent lists, numbers and functions") {
@@ -533,6 +539,21 @@ class VirtualMachineImplTest : ShouldSpec({
                     ByteCode.Literal.Integer(6),
                 )
             }
+
+            should("Fibonacci 10") {
+                executeAndTest(
+                    """
+                        (define (fibonacci n)
+                            (if (eq? n 0)
+                                0
+                                (if (eq? n 1)
+                                    1
+                                    (+ (fibonacci (- n 1)) (fibonacci (- n 2))))))
+                        (fibonacci 10)
+                        """,
+                    ByteCode.Literal.Integer(55),
+                )
+            }
         }
 
         context("Lambda") {
@@ -607,6 +628,126 @@ class VirtualMachineImplTest : ShouldSpec({
     }
 
     context("How to implement recursive functions?") {
+        // Stolen from let
+        should("Basic") {
+            executeAndTest(
+                "(letrec (x 1) x)",
+                ByteCode.Literal.Integer(1),
+            )
+        }
+        should("Two lets following") {
+            executeAndTest(
+                "(letrec (x 1) x) (letrec (x 2) x)",
+                ByteCode.Literal.Integer(1),
+                ByteCode.Literal.Integer(2),
+            )
+        }
+        should("Calculate value and evaluate body") {
+            executeAndTest(
+                "(letrec (x (+ 1 2)) (+ x 3))",
+                ByteCode.Literal.Integer(6),
+            )
+        }
+        should("Return value") {
+            executeAndTest(
+                "(+ (letrec (x 1) x) 42)",
+                ByteCode.Literal.Integer(43),
+            )
+        }
+        should("Parents variable") {
+            executeAndTest(
+                "(letrec (y 1) (let (x 2) y))",
+                ByteCode.Literal.Integer(1),
+            )
+        }
+        should("Shadowing") {
+            executeAndTest(
+                "(letrec (x 1) (letrec (x 2) x))",
+                ByteCode.Literal.Integer(2),
+            )
+        }
+        should("Unknown variable") {
+            executeAndFail("(letrec (x 1) (letrec (x 2) y))")
+        }
 
+        // Original
+        should("Factorial 0") {
+            executeAndTest(
+                """
+                    (letrec
+                        (fact (lambda (n)
+                            (if (eq? n 0)
+                                1
+                                (* n (fact (- n 1)))
+                            )
+                        ))
+                        (fact 0))
+                """,
+                ByteCode.Literal.Integer(1),
+            )
+        }
+        should("Factorial 1") {
+            executeAndTest(
+                """
+                    (letrec
+                        (fact (lambda (n)
+                            (if (eq? n 0)
+                                1
+                                (* n (fact (- n 1)))
+                            )
+                        ))
+                        (fact 1))
+                """,
+                ByteCode.Literal.Integer(1),
+            )
+        }
+        should("Factorial 10") {
+            executeAndTest(
+                """
+                    (letrec
+                        (fact (lambda (n)
+                            (if (eq? n 0)
+                                1
+                                (* n (fact (- n 1)))
+                            )
+                        ))
+                        (fact 10))
+                """,
+                ByteCode.Literal.Integer(3628800),
+            )
+        }
+        should("Fun with same name") {
+            executeAndTest(
+                """
+                    (defun (fact n) -1)
+                    (defun (foo n) -1)
+                    (letrec
+                        (fact (lambda (n)
+                            (if (eq? n 0)
+                                1
+                                (* n (fact (- n 1)))
+                            )
+                        ))
+                        (fact 3))
+                """,
+                ByteCode.Literal.Integer(6),
+            )
+        }
+        should("Fibonacci 10") {
+            executeAndTest(
+                """
+                    (letrec (fibonacci (lambda (n)
+                        (if (eq? n 0)
+                            0
+                            (if (eq? n 1)
+                                1
+                                (+ (fibonacci (- n 1)) (fibonacci (- n 2)))))))
+                        (fibonacci 10))
+                """,
+                ByteCode.Literal.Integer(55),
+            )
+        }
     }
-})
+}) {
+    companion object
+}

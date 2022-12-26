@@ -37,7 +37,7 @@ fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCo
         is Node.Closures.DeFun -> compile(context)
         is Node.Closures.Lambda -> compile(context)
         is Node.Closures.Let -> compile(context)
-        is Node.Closures.LetRec -> TODO()
+        is Node.Closures.LetRec -> compile(context)
         is Node.VariableSubstitution -> compile(context)
     }
 

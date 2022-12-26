@@ -31,7 +31,7 @@ class TokenizerImpl(
             listOf(
                 '+' to LToken.Operator.Add,
                 // '-' to LToken.Operator.Minus, - handled in the complex section
-                '*' to LToken.Operator.Times,
+                '*' to LToken.Operator.Multiply,
                 '/' to LToken.Operator.Div,
                 '<' to LToken.Operator.Lower,
                 '>' to LToken.Operator.Greater,

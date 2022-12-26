@@ -20,7 +20,7 @@ fun Tokens.parseOperator(info: TokenInfo<LToken.Operator>): Validated<Error, Nod
                 when (info.token) {
                     LToken.Operator.Add -> Node.Binary.Add(a0, a1)
                     LToken.Operator.Sub -> Node.Binary.Subtract(a0, a1)
-                    LToken.Operator.Times -> Node.Binary.Multiply(a0, a1)
+                    LToken.Operator.Multiply -> Node.Binary.Multiply(a0, a1)
                     LToken.Operator.Div -> Node.Binary.Divide(a0, a1)
                     LToken.Operator.Lower -> Node.Binary.Lower(a0, a1)
                     LToken.Operator.Greater -> Node.Binary.Greater(a0, a1)

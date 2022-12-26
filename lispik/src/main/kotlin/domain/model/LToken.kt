@@ -18,7 +18,7 @@ sealed interface LToken {
     sealed interface Operator: LToken {
         data object Add : Operator
         data object Sub : Operator
-        data object Times : Operator
+        data object Multiply : Operator
         data object Div : Operator
         data object Greater : Operator
         data object Lower : Operator

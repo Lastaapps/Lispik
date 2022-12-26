@@ -70,8 +70,24 @@ sealed interface ByteCode {
 
         data object Nil : Literal, LList
 
-        data class Closure(val code: CodeBlock, val env: ImmutableList<ImmutableList<Literal>>) : Literal {
-            override fun toString(): String = "Closure{$code, $env}"
+        sealed interface Closure : Literal {
+            val code: CodeBlock
+            val env: PersistentList<ImmutableList<Literal>>
+
+            data class Env(override val code: CodeBlock, override val env: PersistentList<ImmutableList<Literal>>) :
+                Closure {
+                override fun toString(): String = "⟨$code - $env⟩"
+            }
+
+            data class Recursive(
+                override val code: CodeBlock,
+                private val prevEnv: PersistentList<ImmutableList<Literal>>
+            ) : Closure {
+                override val env: PersistentList<ImmutableList<Literal>>
+                    get() = prevEnv.add(0, persistentListOf(this))
+
+                override fun toString(): String = "⟨$code ∞ ${prevEnv}⟩"
+            }
         }
     }
 }

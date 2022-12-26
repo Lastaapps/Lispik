@@ -18,7 +18,7 @@ fun Node.Closures.Let.compile(context: CompilationContext): Validated<Error, Byt
     val childContext = context.add(0, persistentListOf(name))
 
     val valueCode = value.compileDispatcher(context).valueOr { return it.invalid() } // child context in letrec
-    val bodyCode = body.compileDispatcher(childContext).valueOr { return it.invalid() } // child context in letrec
+    val bodyCode = body.compileDispatcher(childContext).valueOr { return it.invalid() }
 
     return listOf(
         ByteInstructions.Nil, valueCode, ByteInstructions.Cons, // create closure
@@ -28,4 +28,21 @@ fun Node.Closures.Let.compile(context: CompilationContext): Validated<Error, Byt
         ), // pushes body to stack
         ByteInstructions.Ap, // execute
     ).flatten().valid()
+}
+
+fun Node.Closures.LetRec.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
+    val childContext = context.add(0, persistentListOf(name))
+
+    val valueCode = value.compileDispatcher(childContext).valueOr { return it.invalid() }
+    val bodyCode = this.body.compileDispatcher(childContext).valueOr { return it.invalid() }
+
+    return ByteCode.CodeBlock(
+        ByteInstructions.Dum,
+        ByteInstructions.Nil,
+        *valueCode.instructions.toTypedArray(),
+        ByteInstructions.Cons,
+        ByteInstructions.Ldf,
+        listOf(bodyCode, ByteInstructions.Rtn).flatten(),
+        ByteInstructions.Rap,
+    ).valid()
 }

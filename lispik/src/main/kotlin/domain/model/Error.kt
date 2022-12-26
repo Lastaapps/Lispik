@@ -91,11 +91,5 @@ sealed interface Error {
             override val instruction: ByteCode
                 get() = ByteInstructions.Rap
         }
-
-        data object ClosureRequiredForPathing : ExecutionError {
-            override val instruction: ByteCode
-                get() = ByteInstructions.Rap
-        }
-
     }
 }

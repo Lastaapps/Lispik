@@ -274,7 +274,7 @@ class ParserImplTest : ShouldSpec({
                                 ),
                             ),
                             Node.Apply.ApplyOperator(
-                                LToken.Operator.Times,
+                                LToken.Operator.Multiply,
                                 Node.Literal.LList(
                                     Node.Literal.LInteger(2),
                                     Node.Literal.LInteger(3),

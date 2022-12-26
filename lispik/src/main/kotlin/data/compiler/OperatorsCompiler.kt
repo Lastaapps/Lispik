@@ -41,7 +41,7 @@ fun Node.Binary.compile(context: CompilationContext): Validated<Error, ByteCode.
     val inst = when (this) {
         is Node.Binary.Add -> ByteInstructions.MathBinary.Add
         is Node.Binary.Subtract -> ByteInstructions.MathBinary.Sub
-        is Node.Binary.Multiply -> ByteInstructions.MathBinary.Multiply
+        is Node.Binary.Multiply -> ByteInstructions.MathBinary.Mul
         is Node.Binary.Divide -> ByteInstructions.MathBinary.Div
         is Node.Binary.Cons -> ByteInstructions.Cons
         is Node.Binary.Greater -> ByteInstructions.MathBinary.Greater

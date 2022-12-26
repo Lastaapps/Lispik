@@ -1,7 +1,6 @@
 package domain.model
 
 import arrow.core.Validated
-import arrow.core.andThen
 import arrow.core.invalid
 import arrow.core.valid
 import arrow.core.valueOr
@@ -55,7 +54,7 @@ object ByteInstructions {
             override fun compute(arg0: Int, arg1: Int): Validated<Error, Int> = (arg0 - arg1).valid()
         }
 
-        data object Multiply : MathBinary {
+        data object Mul : MathBinary {
             override fun compute(arg0: Int, arg1: Int): Validated<Error, Int> = (arg0 * arg1).valid()
         }
 
@@ -357,7 +356,7 @@ object ByteInstructions {
         override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
             val toStore = code.popTyped<ByteCode.CodeBlock>(this).valueOr { return it.invalid() }
 
-            stack.push(ByteCode.Literal.Closure(toStore, env.dropLast(1).toImmutableList()))
+            stack.push(ByteCode.Literal.Closure.Env(toStore, env.dropLast(1).toPersistentList()))
 
             return Unit.valid()
         }
@@ -439,43 +438,47 @@ object ByteInstructions {
         override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
             val closure = stack.popTyped<ByteCode.Literal.Closure>(this).valueOr { return it.invalid() }
             val args = stack.popTyped<ByteCode.Literal.LList>(this).valueOr { return it.invalid() }
+            val argsList = args.toList().valueOr { return it.invalid() }
 
             // pop dummy env
             if (env.pop().isNotEmpty()) {
                 return Error.ExecutionError.RemovedEnvInsteadOfDummy.invalid()
             }
 
-            val patch = args.toList().map { it.first() }.andThen {
-                if (it is ByteCode.Literal.Closure) {
-                    it.valid()
-                } else {
-                    Error.ExecutionError.ClosureRequiredForPathing.invalid()
-                }
-            }.valueOr { return it.invalid() }
-            val patchCode = ByteCode.Literal.Closure(patch.code, persistentListOf())
-
-            val updated = with(closure) {
-                copy(
-                    env = env.toPersistentList().removeAt(env.lastIndex)
-                        .add(persistentListOf(patchCode)),
-                )
-            }
-
             val backup = Dumpable.Complete(
                 stack.toImmutableList(),
                 code.toImmutableList(),
-                env.dropLast(1).toPersistentList(),
+                env.dropLast(1).toPersistentList(), // drop global
             )
             dump.push(backup)
 
             stack.clear()
             code.clear()
-            val global = env.last()
-            env.clear()
-            env.push(global)
 
-            code.addAll(updated.code.instructions)
-            env.addAll(updated.env)
+            // Empty if global scope is not used or when it is initialized
+            if (env.isNotEmpty()) {
+                val global = env.last()
+                env.clear()
+                env.push(global)
+            }
+
+            if (closure.env.first().isNotEmpty())
+                return Error.ExecutionError.RemovedEnvInsteadOfDummy.invalid()
+
+            when (val recCode = argsList.first()) {
+                is ByteCode.Literal.Closure -> {
+                    val recursive = ByteCode.Literal.Closure.Recursive(
+                        recCode.code,
+                        recCode.env.removeAt(0),
+                    )
+                    env.addAll(recursive.env)
+                }
+
+                else ->
+                    env.addAll(closure.env.add(0, persistentListOf(recCode)))
+            }
+
+            code.addAll(closure.code.instructions)
 
             return Unit.valid()
         }

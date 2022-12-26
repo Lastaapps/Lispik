@@ -103,6 +103,29 @@ internal fun CacheIterator.matchMinusToken() =
         }
     }
 
+internal fun CacheIterator.matchCompareToken(greater: Boolean) =
+    if (greater) {
+        '>'
+    } else {
+        '<'
+    }.let { pattern ->
+        matchChar(pattern).map {
+            when (matchChar('=')) {
+                is Validated.Valid ->
+                    if (greater)
+                        LToken.Operator.GreaterEqual
+                    else
+                        LToken.Operator.LowerEqual
+
+                is Validated.Invalid ->
+                    if (greater)
+                        LToken.Operator.Greater
+                    else
+                        LToken.Operator.Lower
+            }
+        }
+    }
+
 internal class CacheIterator(
     private val iterator: Iterator<Char>,
 ) {

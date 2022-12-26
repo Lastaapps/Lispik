@@ -57,19 +57,21 @@ class TokenizerImplTest : FunSpec({
         }
         test("Operators") {
             runNextTokenTest(
-                "+ - * / < > ",
+                "+ - * / < > <= >=",
                 LToken.Operator.Add,
                 LToken.Operator.Sub,
                 LToken.Operator.Multiply,
                 LToken.Operator.Div,
                 LToken.Operator.Lower,
                 LToken.Operator.Greater,
+                LToken.Operator.LowerEqual,
+                LToken.Operator.GreaterEqual,
                 LToken.Eof,
             )
         }
         test("Keywords") {
 
-            val input = "pair? eq? atom? null? nil? def defun define list"
+            val input = "pair? eq? atom? null? nil? zero? def defun define list not and or"
             println("Running test for '$input'")
 
             val tokens = Tokenizer.from(input)
@@ -83,10 +85,14 @@ class TokenizerImplTest : FunSpec({
                 FunToken.BuiltIn.IsAtom,
                 FunToken.BuiltIn.IsNil,
                 FunToken.BuiltIn.IsNil,
+                FunToken.BuiltIn.Zero,
                 FunToken.BuiltIn.DeFun,
                 FunToken.BuiltIn.DeFun,
                 FunToken.BuiltIn.DeFun,
                 FunToken.BuiltIn.List,
+                FunToken.BuiltIn.Not,
+                FunToken.BuiltIn.And,
+                FunToken.BuiltIn.Or,
             ).zip(tokens) { ref, actual ->
                 actual should beInstanceOf<LToken.Text>()
                 ref shouldBe (actual as LToken.Text).tryMatchFun()
@@ -94,11 +100,12 @@ class TokenizerImplTest : FunSpec({
         }
         test("Text and numbers") {
             runNextTokenTest(
-                "( ' fun3 1234 cons - -1234) if)",
+                "( ' fun3 1234 -cons - -1234) if)",
                 LToken.Bracket.Opened,
                 LToken.Quote,
                 LToken.Text("fun3"),
                 LToken.Number(1234),
+                LToken.Operator.Sub,
                 LToken.Text("cons"),
                 LToken.Operator.Sub,
                 LToken.Number(-1234),

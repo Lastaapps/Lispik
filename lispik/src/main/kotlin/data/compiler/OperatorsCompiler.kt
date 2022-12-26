@@ -29,6 +29,15 @@ fun Node.Unary.compile(context: CompilationContext): Validated<Error, ByteCode.C
         is Node.Unary.IsNil -> ByteInstructions.IsNil
         is Node.Unary.IsPair -> ByteInstructions.IsPair
         is Node.Unary.Print -> ByteInstructions.Print
+        is Node.Unary.Zero -> {
+            return Node.Binary.IsEqual(arg0, Node.Literal.LInteger(0))
+                .compile(context)
+        }
+
+        is Node.Unary.Not -> {
+            return Node.Unary.Zero(arg0)
+                .compile(context)
+        }
     }
 
     return listOf(c0, inst).flatten().valid()
@@ -47,6 +56,31 @@ fun Node.Binary.compile(context: CompilationContext): Validated<Error, ByteCode.
         is Node.Binary.Greater -> ByteInstructions.MathBinary.Greater
         is Node.Binary.Lower -> ByteInstructions.MathBinary.Lower
         is Node.Binary.IsEqual -> ByteInstructions.IsEqual
+        is Node.Binary.GreaterEqual -> {
+            return Node.Unary.Not(
+                Node.Binary.Lower(arg0, arg1)
+            ).compile(context)
+        }
+
+        is Node.Binary.LowerEqual -> {
+            return Node.Unary.Not(
+                Node.Binary.Greater(arg0, arg1)
+            ).compile(context)
+        }
+
+        is Node.Binary.And -> {
+            return Node.Binary.Multiply(arg0, arg1) // False is 0
+                .compile(context)
+        }
+
+        is Node.Binary.Or -> {
+            return Node.Unary.Not(
+                Node.Binary.And(
+                    Node.Unary.Not(arg0),
+                    Node.Unary.Not(arg1),
+                )
+            ).compile(context)
+        }
     }
 
     return listOf(c1, c0, inst).flatten().valid()

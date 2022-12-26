@@ -29,9 +29,10 @@ class VirtualMachineImplTest : ShouldSpec({
             .also { println("Testing for input:\n$it") }
             .let { lisp -> Tokenizer.from(lisp) }
             .let { tokenizer -> Parser.from(tokenizer) }
-            .let { parser -> parser.parseToAST() }
+
+            .parseToAST()
             .andThen { tree -> Compiler.from().compile(tree, createGlobalEnv = !debug) }
-            .also { println("Compiled to bytecode:\n$it") }
+            .tap { println("Compiled to bytecode:\n$it") }
             .andThen { code ->
                 VirtualMachine.from()
                     .runCode(code, debug = true, globalEnv = true)
@@ -178,9 +179,11 @@ class VirtualMachineImplTest : ShouldSpec({
         }
 
 
-        should("Checks - eq?, atom?, pair?, nil?") {
+        should("Checks - eq?, zero?, atom?, pair?, nil?") {
             executeAndTest("(eq?     1 1)", ByteCode.Literal.True)
             executeAndTest("(eq?     1 2)", ByteCode.Literal.False)
+            executeAndTest("(zero?     0)", ByteCode.Literal.True)
+            executeAndTest("(zero?     1)", ByteCode.Literal.False)
             executeAndTest("(atom?     1)", ByteCode.Literal.True)
             executeAndTest("(atom?   nil)", ByteCode.Literal.False)
             executeAndTest("(atom?  '(1))", ByteCode.Literal.False)
@@ -192,6 +195,21 @@ class VirtualMachineImplTest : ShouldSpec({
             executeAndTest("(pair?  '(1))", ByteCode.Literal.True)
         }
 
+
+        should("Logic operators - not, and, or") {
+            executeAndTest("(zero? 0)", ByteCode.Literal.True)
+            executeAndTest("(not (zero? 0))", ByteCode.Literal.False)
+            executeAndTest("(zero? 1)", ByteCode.Literal.False)
+            executeAndTest("(not (zero? 1))", ByteCode.Literal.True)
+            executeAndTest("(and (zero? 0) (zero? 0))", ByteCode.Literal.True)
+            executeAndTest("(and (zero? 0) (zero? 1))", ByteCode.Literal.False)
+            executeAndTest("(and (zero? 1) (zero? 0))", ByteCode.Literal.False)
+            executeAndTest("(and (zero? 1) (zero? 1))", ByteCode.Literal.False)
+            executeAndTest("(or  (zero? 0) (zero? 0))", ByteCode.Literal.True)
+            executeAndTest("(or  (zero? 0) (zero? 1))", ByteCode.Literal.True)
+            executeAndTest("(or  (zero? 1) (zero? 0))", ByteCode.Literal.True)
+            executeAndTest("(or  (zero? 1) (zero? 1))", ByteCode.Literal.False)
+        }
 
 
         should("List") {

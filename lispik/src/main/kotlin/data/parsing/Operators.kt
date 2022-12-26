@@ -24,6 +24,8 @@ fun Tokens.parseOperator(info: TokenInfo<LToken.Operator>): Validated<Error, Nod
                     LToken.Operator.Div -> Node.Binary.Divide(a0, a1)
                     LToken.Operator.Lower -> Node.Binary.Lower(a0, a1)
                     LToken.Operator.Greater -> Node.Binary.Greater(a0, a1)
+                    LToken.Operator.GreaterEqual -> Node.Binary.GreaterEqual(a0, a1)
+                    LToken.Operator.LowerEqual -> Node.Binary.LowerEqual(a0, a1)
                 }
             }.valid()
         }

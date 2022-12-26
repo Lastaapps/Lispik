@@ -25,6 +25,8 @@ sealed interface LToken {
         data object Div : Operator
         data object Greater : Operator
         data object Lower : Operator
+        data object GreaterEqual : Operator
+        data object LowerEqual : Operator
     }
 
     data object Eof : LToken

@@ -18,7 +18,6 @@ class TokenizerImpl(
 ) : Tokenizer {
     private val iterator = CacheIterator(charIterator)
 
-    //TODO require whitespace
     private val matchers = iterator.let {
         // Basic structures (don't require white space after
         listOf(
@@ -35,12 +34,14 @@ class TokenizerImpl(
                 // '-' to LToken.Operator.Minus, - handled in the complex section
                 '*' to LToken.Operator.Multiply,
                 '/' to LToken.Operator.Div,
-                '<' to LToken.Operator.Lower,
-                '>' to LToken.Operator.Greater,
+                // '<' to LToken.Operator.Lower, // <=
+                // '>' to LToken.Operator.Greater, PP >=
             ).map { (char, token) ->
                 { iterator.matchChar(char).map { token }/*.requireAfterToken()*/ }
             }.let { simpleMatchers ->
                 listOf(
+                    { iterator.matchCompareToken(true) },
+                    { iterator.matchCompareToken(false) },
                     { iterator.matchMinusToken() },
                     { iterator.matchNumber().map { LToken.Number(it) } },
                     { iterator.matchTextOrDigit().map { LToken.Text(it) } },

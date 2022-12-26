@@ -80,6 +80,34 @@ fun Tokens.parseBuildIn(token: FunToken.BuiltIn): Validated<Error, Node> =
                     Node.Unary.IsNil(it[0])
                 }
 
+        FunToken.BuiltIn.Zero ->
+            parseRemainingExpressions()
+                .valueOr { return it.invalid() }
+                .requireSize(token, 1).map {
+                    Node.Unary.Zero(it[0])
+                }
+
+        FunToken.BuiltIn.Not ->
+            parseRemainingExpressions()
+                .valueOr { return it.invalid() }
+                .requireSize(token, 1).map {
+                    Node.Unary.Not(it[0])
+                }
+
+        FunToken.BuiltIn.And ->
+            parseRemainingExpressions()
+                .valueOr { return it.invalid() }
+                .requireSize(token, 2).map {
+                    Node.Binary.And(it[0], it[1])
+                }
+
+        FunToken.BuiltIn.Or ->
+            parseRemainingExpressions()
+                .valueOr { return it.invalid() }
+                .requireSize(token, 2).map {
+                    Node.Binary.Or(it[0], it[1])
+                }
+
         FunToken.BuiltIn.Print ->
             parseRemainingExpressions()
                 .valueOr { return it.invalid() }

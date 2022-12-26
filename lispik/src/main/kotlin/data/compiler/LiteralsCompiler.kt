@@ -48,7 +48,7 @@ private fun ByteCode.Literal.LPair.toList(): String {
     val c2 = when (cdr) {
         is ByteCode.Literal.Integer -> ".${cdr.value}"
         is ByteCode.Literal.LPair -> " " + cdr.toList()
-        ByteCode.Literal.Nil -> "nil"
+        ByteCode.Literal.Nil -> ""
         is ByteCode.Literal.Closure -> ".closure"
     }
 

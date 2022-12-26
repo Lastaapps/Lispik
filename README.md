@@ -74,8 +74,9 @@ and therefore the syntax is only with one bracket pair.*
 ./run.sh lispik/examples/read-print.lsp
 ```
 
-// TODO zero, =, not, and, or, equal, atom?
 // TODO read list without quote
+// TODO let (if so, remove a notice above)
+// TODO check TODO
 
 ## Sources
  - https://courses.fit.cvut.cz/BIE-PPA/files/lectures/BIE-PPA-7.pdf

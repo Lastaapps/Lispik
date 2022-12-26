@@ -46,6 +46,12 @@ sealed interface Node {
 
         @JvmInline
         value class Print(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class Not(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class Zero(override val arg0: Node) : Unary
     }
 
     sealed interface Binary : Node {
@@ -58,8 +64,12 @@ sealed interface Node {
         data class Multiply(override val arg0: Node, override val arg1: Node) : Binary
         data class Divide(override val arg0: Node, override val arg1: Node) : Binary
         data class Greater(override val arg0: Node, override val arg1: Node) : Binary
+        data class GreaterEqual(override val arg0: Node, override val arg1: Node) : Binary
         data class Lower(override val arg0: Node, override val arg1: Node) : Binary
+        data class LowerEqual(override val arg0: Node, override val arg1: Node) : Binary
         data class Cons(override val arg0: Node, override val arg1: Node) : Binary
+        data class And(override val arg0: Node, override val arg1: Node) : Binary
+        data class Or(override val arg0: Node, override val arg1: Node) : Binary
     }
 
     sealed interface Ternary : Node {

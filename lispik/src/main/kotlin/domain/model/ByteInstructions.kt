@@ -307,7 +307,7 @@ object ByteInstructions {
             env: LEnvironment
         ): Validated<Error, Unit> {
 
-            print("[Read]> ")
+            print("[Read ]> ")
             val line = stream
                 .readLine()
                 ?.takeIf { it.isNotBlank() }

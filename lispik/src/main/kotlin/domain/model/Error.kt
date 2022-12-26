@@ -10,6 +10,9 @@ sealed interface Error {
 
         data class EOFReached(override val pos: Position) : TokenError
         data class UnknownCharacter(override val pos: Position) : TokenError
+
+        data class UnclosedComment(override val pos: Position) : TokenError
+        data class CommentWrongFormat(override val pos: Position) : TokenError
     }
 
     sealed interface ParserError : Error {

@@ -10,6 +10,7 @@ import arrow.core.Validated
 import arrow.core.getOrElse
 import arrow.core.invalid
 import arrow.core.some
+import arrow.core.valid
 import arrow.core.valueOr
 import domain.model.Error
 import domain.model.LToken
@@ -101,6 +102,8 @@ internal class CacheIterator(
     private var current: Option<Char> = None
     private var line = 0
     private var column = -1
+    private var inSingleComment = false
+    private var inMultilineComment = false
 
     fun hasNext(): Boolean = current is Some
 
@@ -113,6 +116,7 @@ internal class CacheIterator(
                 if (it == '\n') {
                     line += 1
                     column = 0
+                    inSingleComment = false
                 }
             }
         } else {
@@ -126,5 +130,51 @@ internal class CacheIterator(
 
     init {
         move()
+    }
+
+    fun skipWhitespace(): Validated<Error.TokenError, Unit> {
+        while (hasNext()) {
+            val char = current().getOrElse { break }
+            when {
+                inMultilineComment && char == '|' -> {
+                    move()
+                    val next = current().getOrElse {
+                        return Error.TokenError.CommentWrongFormat(position()).invalid()
+                    }
+                    if (next == '#') {
+                        inMultilineComment = false
+                        move()
+                    }
+                }
+
+                inSingleComment || inMultilineComment -> move()
+
+                char.isWhitespace() -> move()
+
+                char == ';' -> {
+                    inSingleComment = true
+                    move()
+                }
+
+                !inSingleComment && char == '#' -> {
+                    move()
+                    val next = current().getOrElse {
+                        return Error.TokenError.CommentWrongFormat(position()).invalid()
+                    }
+                    if (next == '|') {
+                        inMultilineComment = true
+                        move()
+                    } else {
+                        Error.TokenError.CommentWrongFormat(position())
+                    }
+                }
+
+                else -> return Unit.valid()
+            }
+        }
+
+        return if (inMultilineComment)
+            Error.TokenError.UnclosedComment(position()).invalid()
+        else Unit.valid()
     }
 }

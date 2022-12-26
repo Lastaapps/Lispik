@@ -1,9 +1,11 @@
 package data.token
 
 import arrow.core.Validated
+import arrow.core.invalid
 import arrow.core.left
 import arrow.core.right
 import arrow.core.valid
+import arrow.core.valueOr
 import domain.Tokenizer
 import domain.model.Error
 import domain.model.LToken
@@ -52,9 +54,8 @@ class TokenizerImpl(
     }
 
     override fun nextToken(): Validated<Error.TokenError, TokenInfo<LToken>> {
-        while (iterator.hasNext() && iterator.current().orNull()?.isWhitespace() == true) {
-            iterator.move()
-        }
+        iterator.skipWhitespace().valueOr { return it.invalid() }
+
         return iterator.position().let { pos ->
             if (!iterator.hasNext()) {
                 LToken.Eof.valid()

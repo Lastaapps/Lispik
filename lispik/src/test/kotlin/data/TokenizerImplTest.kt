@@ -2,6 +2,7 @@ package data
 
 import data.token.asSequence
 import domain.Tokenizer
+import domain.model.Error
 import domain.model.FunToken
 import domain.model.LToken
 import domain.model.tryMatchFun
@@ -22,6 +23,16 @@ class TokenizerImplTest : FunSpec({
                 .asSequence()
                 .toList()
                 .map { token -> token.fold({ it }, { it.token }) } shouldBe res.toList()
+        }
+
+        fun failTokenTest(input: String) {
+            println("Running test for '$input'")
+
+            Tokenizer.from(input)
+                .asSequence()
+                .toList()
+                .map { token -> token.fold({ it }, { it.token }) }
+                .last() should beInstanceOf<Error.TokenError>()
         }
 
         test("Empty") {
@@ -84,18 +95,65 @@ class TokenizerImplTest : FunSpec({
         test("Text and numbers") {
             runNextTokenTest(
                 "( ' fun 1234 cons - -1234) if)",
-                    LToken.Bracket.Opened,
-                    LToken.Quote,
-                    LToken.Text("fun"),
-                    LToken.Number(1234),
-                    LToken.Text("cons"),
-                    LToken.Operator.Sub,
-                    LToken.Number(-1234),
-                    LToken.Bracket.Closed,
-                    LToken.Text("if"),
-                    LToken.Bracket.Closed,
-                    LToken.Eof,
+                LToken.Bracket.Opened,
+                LToken.Quote,
+                LToken.Text("fun"),
+                LToken.Number(1234),
+                LToken.Text("cons"),
+                LToken.Operator.Sub,
+                LToken.Number(-1234),
+                LToken.Bracket.Closed,
+                LToken.Text("if"),
+                LToken.Bracket.Closed,
+                LToken.Eof,
             )
+        }
+        context("Comments") {
+            test("Single line") {
+                runNextTokenTest(
+                    "; Hello there",
+                    LToken.Eof,
+                )
+                runNextTokenTest(
+                    """
+                        1
+                        ; 2
+                        3
+                    """,
+                    LToken.Number(1),
+                    LToken.Number(3),
+                    LToken.Eof,
+                )
+            }
+            test("Multiline") {
+                runNextTokenTest(
+                    """
+                        #|
+                        Hello there
+                        |#
+                    """,
+                    LToken.Eof,
+                )
+                runNextTokenTest(
+                    """
+                        1
+                        #|
+                        2 |
+                        |#
+                        3
+                    """,
+                    LToken.Number(1),
+                    LToken.Number(3),
+                    LToken.Eof,
+                )
+                failTokenTest("""#""")
+                failTokenTest("""|""")
+                failTokenTest("""#|""")
+                failTokenTest("""|#""")
+                failTokenTest("""#||""")
+                failTokenTest("""#|#""")
+                failTokenTest("""||#""")
+            }
         }
     }
 })

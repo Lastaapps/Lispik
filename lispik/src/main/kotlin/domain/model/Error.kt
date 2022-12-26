@@ -27,12 +27,14 @@ sealed interface Error {
         data object DeFunInNonRootScope : ParserError
         data object LiteralsOnly : ParserError
         data class FunctionDefinedTwice(val name: String) : ParserError
+        data object ApplyTargetMissingOrInvalid : ParserError
     }
 
     sealed interface CompilerError : Error {
-        @JvmInline
-        value class NotFoundByName(val node: Node) : CompilerError
+        data class NotFoundByName(val node: Node) : CompilerError
         data object FunctionsUsedWithoutGlobalEnv : CompilerError
+        data object ApplyOnBuildInsNotSupported : CompilerError
+        data object ApplyArgsCannotBeEmpty : CompilerError
     }
 
     sealed interface ExecutionError : Error {

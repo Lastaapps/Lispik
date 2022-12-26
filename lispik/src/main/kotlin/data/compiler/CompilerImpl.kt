@@ -32,7 +32,7 @@ fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCo
         is Node.Ternary -> compile(context)
         is Node.Nnary -> compile(context)
 
-        is Node.Apply -> TODO()
+        is Node.Apply -> compile(context)
         is Node.Call -> compile(context)
         is Node.Closures.DeFun -> compile(context)
         is Node.Closures.Lambda -> compile(context)

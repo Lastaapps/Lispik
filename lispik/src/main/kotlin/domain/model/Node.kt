@@ -100,11 +100,15 @@ sealed interface Node {
     sealed interface Apply : Node {
         val args: ImmutableList<Node>
 
-        data class ApplyCall(val toCall: String, override val args: ImmutableList<Node>) : Apply {
-            constructor(toCall: String, vararg args: Node) : this(toCall, args.toList().toPersistentList())
+        data class Call(val toCall: FunToken, override val args: ImmutableList<Node>) : Apply {
+            constructor(toCall: FunToken, vararg args: Node) : this(toCall, args.toList().toPersistentList())
         }
 
-        data class ApplyOperator(val operator: LToken.Operator, override val args: ImmutableList<Node>) : Apply {
+        data class Eval(val toEval: Node, override val args: ImmutableList<Node>) : Apply {
+            constructor(toEval: Node, vararg args: Node) : this(toEval, args.toList().toPersistentList())
+        }
+
+        data class Operator(val operator: LToken.Operator, override val args: ImmutableList<Node>) : Apply {
             constructor(operator: LToken.Operator, vararg args: Node) : this(operator, args.toList().toPersistentList())
         }
     }

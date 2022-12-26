@@ -540,7 +540,7 @@ class VirtualMachineImplTest : ShouldSpec({
                 )
             }
 
-            should("Fibonacci 10") {
+            should("Fibonacci 5") {
                 executeAndTest(
                     """
                         (define (fibonacci n)
@@ -549,9 +549,9 @@ class VirtualMachineImplTest : ShouldSpec({
                                 (if (eq? n 1)
                                     1
                                     (+ (fibonacci (- n 1)) (fibonacci (- n 2))))))
-                        (fibonacci 10)
+                        (fibonacci 5)
                         """,
-                    ByteCode.Literal.Integer(55),
+                    ByteCode.Literal.Integer(5),
                 )
             }
         }
@@ -622,6 +622,38 @@ class VirtualMachineImplTest : ShouldSpec({
                         ) 1) 2)
                     """,
                     ByteCode.Literal.Integer(3),
+                )
+            }
+        }
+
+        context("Apply") {
+            should("Operator") {
+                // Not yet supported
+                executeAndFail("""(apply + 2 '(3))""")
+                executeAndFail("""(apply - 2 '(3))""")
+                executeAndFail("""(apply * '(2 3))""")
+            }
+            should("Call by name") {
+                executeAndTest(
+                    """
+                        (define (max x y) 
+                            (if (> x y) x y)
+                        )
+                        (apply max 2 3 '()) 
+                        (apply max (+ 1 4) 3 nil) 
+                    """,
+                    ByteCode.Literal.Integer(3),
+                    ByteCode.Literal.Integer(5),
+                )
+            }
+            should("Call evaluated value") {
+                executeAndTest(
+                    """
+                        (apply (lambda (x) x) 1 null)
+                        (apply (lambda (x) x) '(1))
+                    """,
+                    ByteCode.Literal.Integer(1),
+                    ByteCode.Literal.Integer(1),
                 )
             }
         }
@@ -733,7 +765,7 @@ class VirtualMachineImplTest : ShouldSpec({
                 ByteCode.Literal.Integer(6),
             )
         }
-        should("Fibonacci 10") {
+        should("Fibonacci 5") {
             executeAndTest(
                 """
                     (letrec (fibonacci (lambda (n)
@@ -742,9 +774,9 @@ class VirtualMachineImplTest : ShouldSpec({
                             (if (eq? n 1)
                                 1
                                 (+ (fibonacci (- n 1)) (fibonacci (- n 2)))))))
-                        (fibonacci 10))
+                        (fibonacci 5))
                 """,
-                ByteCode.Literal.Integer(55),
+                ByteCode.Literal.Integer(5),
             )
         }
     }

@@ -6,6 +6,7 @@ import data.parsing.GlobalScope
 import domain.Parser
 import domain.Tokenizer
 import domain.model.Error
+import domain.model.FunToken
 import domain.model.LToken
 import domain.model.Node
 import io.kotest.core.spec.style.ShouldSpec
@@ -14,6 +15,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.beOfType
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 class ParserImplTest : ShouldSpec({
 
@@ -37,6 +39,9 @@ class ParserImplTest : ShouldSpec({
                 }
             }
         }
+
+        fun runParserTest(input: String, functions: List<Node.Closures.DeFun>, expressions: List<Node>) =
+            runParserTest(input, GlobalScope(functions.toImmutableList(), expressions.toImmutableList()))
 
         fun runParserFail(input: String, onError: (Error) -> Unit) {
             createParser(input).let { actual ->
@@ -246,57 +251,82 @@ class ParserImplTest : ShouldSpec({
         }
 
 
-        should("Apply") {
-            """
-                (apply + 2 '(3)) 
-                (apply - 2 '(3)) 
-                (apply * '(2 3)) 
-                (apply a 2 3 '()) 
-                (apply a (+ 1 1) 3 nil) 
-            """.trimIndent().let {
+        context("Apply") {
+            should("Operators") {
                 runParserTest(
-                    it,
-                    GlobalScope(
-                        persistentListOf(),
-                        persistentListOf(
-                            Node.Apply.ApplyOperator(
-                                LToken.Operator.Add,
-                                Node.Literal.LInteger(2),
-                                Node.Literal.LList(
-                                    Node.Literal.LInteger(3),
-                                ),
+                    """
+                        (apply + 2 '(3)) 
+                        (apply - 2 '(3)) 
+                        (apply * '(2 3)) 
+                    """,
+                    persistentListOf(),
+                    persistentListOf(
+                        Node.Apply.Operator(
+                            LToken.Operator.Add,
+                            Node.Literal.LInteger(2),
+                            Node.Literal.LList(
+                                Node.Literal.LInteger(3),
                             ),
-                            Node.Apply.ApplyOperator(
-                                LToken.Operator.Sub,
-                                Node.Literal.LInteger(2),
-                                Node.Literal.LList(
-                                    Node.Literal.LInteger(3),
-                                ),
+                        ),
+                        Node.Apply.Operator(
+                            LToken.Operator.Sub,
+                            Node.Literal.LInteger(2),
+                            Node.Literal.LList(
+                                Node.Literal.LInteger(3),
                             ),
-                            Node.Apply.ApplyOperator(
-                                LToken.Operator.Multiply,
-                                Node.Literal.LList(
-                                    Node.Literal.LInteger(2),
-                                    Node.Literal.LInteger(3),
-                                ),
-                            ),
-                            Node.Apply.ApplyCall(
-                                "a",
+                        ),
+                        Node.Apply.Operator(
+                            LToken.Operator.Multiply,
+                            Node.Literal.LList(
                                 Node.Literal.LInteger(2),
                                 Node.Literal.LInteger(3),
-                                Node.Literal.LList(),
-                            ),
-                            Node.Apply.ApplyCall(
-                                "a",
-                                Node.Binary.Add(
-                                    Node.Literal.LInteger(1),
-                                    Node.Literal.LInteger(1),
-                                ),
-                                Node.Literal.LInteger(3),
-                                Node.Literal.LNil,
                             ),
                         ),
                     )
+                )
+            }
+            should("Call by name") {
+                runParserTest(
+                    """
+                        (apply a 2 3 '()) 
+                        (apply a (+ 1 1) 3 nil) 
+                    """,
+                    persistentListOf(),
+                    persistentListOf(
+                        Node.Apply.Call(
+                            FunToken.User("a"),
+                            Node.Literal.LInteger(2),
+                            Node.Literal.LInteger(3),
+                            Node.Literal.LList(),
+                        ),
+                        Node.Apply.Call(
+                            FunToken.User("a"),
+                            Node.Binary.Add(
+                                Node.Literal.LInteger(1),
+                                Node.Literal.LInteger(1),
+                            ),
+                            Node.Literal.LInteger(3),
+                            Node.Literal.LNil,
+                        ),
+                    ),
+                )
+            }
+            should("Call evaluated value") {
+                runParserTest(
+                    """
+                        (apply (lambda (x) x) 1 null)
+                    """,
+                    persistentListOf(),
+                    persistentListOf(
+                        Node.Apply.Eval(
+                            Node.Closures.Lambda(
+                                persistentListOf("x"),
+                                Node.VariableSubstitution("x"),
+                            ),
+                            Node.Literal.LInteger(1),
+                            Node.Literal.LNil,
+                        ),
+                    ),
                 )
             }
         }

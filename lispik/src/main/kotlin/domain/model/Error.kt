@@ -27,7 +27,8 @@ sealed interface Error {
     }
 
     sealed interface CompilerError : Error {
-        data class NotFoundByName(val node: Node) : CompilerError
+        @JvmInline
+        value class NotFoundByName(val node: Node) : CompilerError
         data object FunctionsUsedWithoutGlobalEnv : CompilerError
     }
 

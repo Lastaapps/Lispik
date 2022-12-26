@@ -14,7 +14,7 @@ import domain.model.LStack
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
-class VirtualMachineImpl : VirtualMachine {
+class VirtualMachineImpl(private val debugLogging: Boolean) : VirtualMachine {
     override fun runCode(srcCode: ByteCode.CodeBlock): Validated<Error, ImmutableList<ByteCode.Literal>> {
         val stack = LStack()
         val dump = LDump()
@@ -40,6 +40,8 @@ class VirtualMachineImpl : VirtualMachine {
     }
 
     private fun debugPrint(stack: LStack, dump: LDump, code: LCode, env: LEnvironment) {
+        if (!debugLogging) return
+
         println("----------------------------------------------------------------")
         println("Stack: $stack")
         println("Dump:  $dump")

@@ -22,7 +22,8 @@ sealed interface FunToken {
         List("list"),
     }
 
-    data class User(val name: String) : FunToken
+    @JvmInline
+    value class User(val name: String) : FunToken
 }
 
 fun LToken.Text.tryMatchFun() =

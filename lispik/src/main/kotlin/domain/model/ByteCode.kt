@@ -25,7 +25,8 @@ sealed interface Dumpable {
         override fun toString(): String = "(s=$stack, c=$code, e=$env)"
     }
 
-    data class Code(
+    @JvmInline
+    value class Code(
         val code: ImmutableList<ByteCode>,
     ) : Dumpable {
         override fun toString(): String = "(c=$code)"
@@ -36,7 +37,8 @@ fun ByteCode.protect() = ByteCode.CodeBlock(this)
 
 sealed interface ByteCode {
 
-    data class CodeBlock(val instructions: ImmutableList<ByteCode>) : ByteCode {
+    @JvmInline
+    value class CodeBlock(val instructions: ImmutableList<ByteCode>) : ByteCode {
         constructor(vararg instructions: ByteCode) : this(instructions.toList().toImmutableList())
 
         override fun toString(): String = "(${instructions.joinToString(separator = ", ")})"
@@ -60,7 +62,8 @@ sealed interface ByteCode {
 
         sealed interface LList : Literal
 
-        data class Integer(val value: Int) : Literal {
+        @JvmInline
+        value class Integer(val value: Int) : Literal {
             override fun toString(): String = value.toString()
         }
 

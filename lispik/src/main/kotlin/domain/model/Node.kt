@@ -19,7 +19,8 @@ sealed interface Node {
         }
     }
 
-    data class VariableSubstitution(override val name: String) : Node, Named
+    @JvmInline
+    value class VariableSubstitution(override val name: String) : Node, Named
 
     sealed interface Nullary : Node {
         data object Read : Nullary
@@ -28,12 +29,23 @@ sealed interface Node {
     sealed interface Unary : Node {
         val arg0: Node
 
-        data class IsNil(override val arg0: Node) : Unary
-        data class IsPair(override val arg0: Node) : Unary
-        data class IsAtom(override val arg0: Node) : Unary
-        data class Car(override val arg0: Node) : Unary
-        data class Cdr(override val arg0: Node) : Unary
-        data class Print(override val arg0: Node) : Unary
+        @JvmInline
+        value class IsNil(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class IsPair(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class IsAtom(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class Car(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class Cdr(override val arg0: Node) : Unary
+
+        @JvmInline
+        value class Print(override val arg0: Node) : Unary
     }
 
     sealed interface Binary : Node {
@@ -61,7 +73,8 @@ sealed interface Node {
     sealed interface Nnary : Node {
         val args: List<Node>
 
-        data class ListNode(override val args: List<Node>) : Nnary {
+        @JvmInline
+        value class ListNode(override val args: List<Node>) : Nnary {
             constructor(vararg args: Node) : this(args.toList().toImmutableList())
         }
     }
@@ -97,8 +110,11 @@ sealed interface Node {
     }
 
     sealed interface Literal : Node {
-        data class LInteger(val value: Int) : Literal
-        data class LList(val value: ImmutableList<Literal>) : Literal {
+        @JvmInline
+        value class LInteger(val value: Int) : Literal
+
+        @JvmInline
+        value class LList(val value: ImmutableList<Literal>) : Literal {
             constructor(vararg args: Literal) : this(args.toList().toImmutableList())
         }
 

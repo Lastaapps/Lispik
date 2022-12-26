@@ -10,6 +10,6 @@ interface VirtualMachine {
     fun runCode(srcCode: ByteCode.CodeBlock): Validated<Error, ImmutableList<ByteCode.Literal>>
 
     companion object {
-        fun from() = VirtualMachineImpl()
+        fun from(debug: Boolean = false) = VirtualMachineImpl(debug)
     }
 }

@@ -34,7 +34,7 @@ class VirtualMachineImplTest : ShouldSpec({
             .let { parser -> parser.parseToAST().valueOr { return it.invalid() } }
             .let { tree -> Compiler.from().compile(tree, createGlobalEnv = !debug).valueOr { return it.invalid() } }
             .also { println("Compiled to bytecode:\n$it") }
-            .let { code -> VirtualMachine.from().runCode(code).valueOr { return it.invalid() } }
+            .let { code -> VirtualMachine.from(true).runCode(code).valueOr { return it.invalid() } }
             .also { println("Result:\n$it") }
             .valid()
 

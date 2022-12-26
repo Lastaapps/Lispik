@@ -7,6 +7,7 @@ fun Error.getMessage(): String = when (this) {
     is Error.ParserError -> getMessage()
     is Error.CompilerError -> getMessage()
     is Error.ExecutionError -> getMessage()
+    is Error.Repl -> getMessage()
 }
 
 fun Error.TokenError.getMessage(): String = when (this) {
@@ -49,4 +50,8 @@ fun Error.ExecutionError.getMessage(): String = when (this) {
     Error.ExecutionError.RemovedEnvInsteadOfDummy -> "Tried to remove actual environment instead of dummy"
     is Error.ExecutionError.WrongOperandInByteCode -> "Unexpected operand type for $instruction in code, expected ${expected.simpleName}, got ${got.simpleName}"
     is Error.ExecutionError.WrongOperandOnStack -> "Unexpected operand type for $instruction on stack, expected ${expected.simpleName}, got ${got.simpleName}"
+}
+
+fun Error.Repl.getMessage(): String = when (this) {
+    Error.Repl.YouCannotDefineFunctionsInRepl -> "You cannot define functions in the REPL mode"
 }

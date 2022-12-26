@@ -7,7 +7,7 @@ import domain.model.ByteCode
 import domain.model.Error
 
 interface Compiler {
-    fun compile(scope: GlobalScope, createGlobalEnv: Boolean = true): Validated<Error, ByteCode>
+    fun compile(scope: GlobalScope, createGlobalEnv: Boolean = true): Validated<Error, ByteCode.CodeBlock>
 
     companion object {
         fun from() = CompilerImpl()

@@ -43,7 +43,7 @@ class TokenizerImpl(
                 listOf(
                     { iterator.matchMinusToken() },
                     { iterator.matchNumber().map { LToken.Number(it) } },
-                    { iterator.matchText().map { LToken.Text(it) } },
+                    { iterator.matchTextOrDigit().map { LToken.Text(it) } },
                 )
                     // .map { { it().requireAfterToken() } }
                     .let { complexMatchers ->

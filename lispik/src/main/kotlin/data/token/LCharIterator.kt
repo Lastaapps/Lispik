@@ -7,6 +7,7 @@ import arrow.core.Option
 import arrow.core.Some
 import arrow.core.Valid
 import arrow.core.Validated
+import arrow.core.andThen
 import arrow.core.getOrElse
 import arrow.core.invalid
 import arrow.core.some
@@ -82,9 +83,16 @@ internal fun CacheIterator.matchSequenceOf(predicate: (Char) -> Boolean): Valida
 internal fun CacheIterator.matchNumber(): Validated<Error.TokenError, Int> =
     matchSequenceOf('0'..'9').map { it.toInt() }
 
-internal fun CacheIterator.matchText(): Validated<Error.TokenError, String> =
+internal fun CacheIterator.matchTextOrDigit(): Validated<Error.TokenError, String> =
     matchSequenceOf {
+        it in 'a'..'z' || it in 'A'..'Z' || it in '0'..'9' || it in "?_-"
+    }
+
+internal fun CacheIterator.matchName(): Validated<Error.TokenError, String> =
+    matchIf {
         it in 'a'..'z' || it in 'A'..'Z' || it in "?_-"
+    }.andThen { startingChar ->
+        matchTextOrDigit().map { startingChar + it }
     }
 
 internal fun CacheIterator.matchMinusToken() =

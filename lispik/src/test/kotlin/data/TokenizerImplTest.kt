@@ -94,10 +94,10 @@ class TokenizerImplTest : FunSpec({
         }
         test("Text and numbers") {
             runNextTokenTest(
-                "( ' fun 1234 cons - -1234) if)",
+                "( ' fun3 1234 cons - -1234) if)",
                 LToken.Bracket.Opened,
                 LToken.Quote,
-                LToken.Text("fun"),
+                LToken.Text("fun3"),
                 LToken.Number(1234),
                 LToken.Text("cons"),
                 LToken.Operator.Sub,

@@ -98,4 +98,8 @@ sealed interface Error {
                 get() = ByteInstructions.Rap
         }
     }
+
+    sealed interface Repl : Error {
+        data object YouCannotDefineFunctionsInRepl : Repl
+    }
 }

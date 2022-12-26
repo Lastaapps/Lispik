@@ -233,7 +233,7 @@ object ByteInstructions {
 
             val literal = stack.peek()
             val unwrapped = literal.unwrap()
-            println("[Lispík]# $unwrapped")
+            println("[Print]# $unwrapped")
             testStream?.println(unwrapped)
 
             return Unit.valid()
@@ -246,7 +246,7 @@ object ByteInstructions {
 
         override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
 
-            print("[Lispík]> ")
+            print("[Read]> ")
             val line = stream
                 .readLine()
                 ?.takeIf { it.isNotBlank() }

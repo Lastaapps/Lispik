@@ -23,7 +23,9 @@ sealed interface FunToken {
     }
 
     @JvmInline
-    value class User(val name: String) : FunToken
+    value class User(val name: String) : FunToken {
+        override fun toString(): String = "[$name]"
+    }
 }
 
 fun LToken.Text.tryMatchFun() =

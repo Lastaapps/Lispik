@@ -9,7 +9,7 @@ sealed interface Error {
         val pos: Position
 
         data class EOFReached(override val pos: Position) : TokenError
-        data class UnknownCharacter(override val pos: Position) : TokenError
+        data class UnknownCharacter(val char: Char, override val pos: Position) : TokenError
 
         data class UnclosedComment(override val pos: Position) : TokenError
         data class CommentWrongFormat(override val pos: Position) : TokenError
@@ -21,7 +21,7 @@ sealed interface Error {
             ParserError
 
         data class InvalidNumberOfArgumentsBuildIn(val token: FunToken, val expected: Int, val got: Int) : ParserError
-        data object NameMissing : ParserError
+        data class NameMissing(val token: TokenInfo<LToken>) : ParserError
         data object ApplyEmpty : ParserError
         data object EndReached : ParserError
         data object DeFunInNonRootScope : ParserError
@@ -31,7 +31,7 @@ sealed interface Error {
     }
 
     sealed interface CompilerError : Error {
-        data class NotFoundByName(val node: Node) : CompilerError
+        data class NotFoundByName(val name: String) : CompilerError
         data object FunctionsUsedWithoutGlobalEnv : CompilerError
         data object ApplyOnBuildInsNotSupported : CompilerError
         data object ApplyArgsCannotBeEmpty : CompilerError

@@ -27,7 +27,7 @@ internal fun CacheIterator.matchIf(
         .let { char ->
             Either.conditionally(
                 predicate(char),
-                { Error.TokenError.UnknownCharacter(position()) },
+                { Error.TokenError.UnknownCharacter(char, position()) },
                 { char },
             ).fold({ Invalid(it) }, { Valid(it) })
         }.tap {
@@ -84,7 +84,7 @@ internal fun CacheIterator.matchNumber(): Validated<Error.TokenError, Int> =
 
 internal fun CacheIterator.matchText(): Validated<Error.TokenError, String> =
     matchSequenceOf {
-        it in 'a'..'z' || it in 'A'..'Z' || it == '?'
+        it in 'a'..'z' || it in 'A'..'Z' || it in "?_-"
     }
 
 internal fun CacheIterator.matchMinusToken() =

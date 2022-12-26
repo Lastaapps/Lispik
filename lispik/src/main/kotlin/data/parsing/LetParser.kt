@@ -17,7 +17,7 @@ fun Tokens.parseLet(): Validated<Error, Triple<String, Node, Node>> {
             if (info.token is LToken.Text) {
                 info.token.name
             } else {
-                return Error.ParserError.NameMissing.invalid()
+                return Error.ParserError.NameMissing(info).invalid()
             }
         }
 

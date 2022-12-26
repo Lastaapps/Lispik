@@ -27,7 +27,7 @@ fun Node.Named.findCoordinates(context: CompilationContext): Validated<Error, By
             }
         }
     }
-    return Error.CompilerError.NotFoundByName(this).invalid()
+    return Error.CompilerError.NotFoundByName(name).invalid()
 }
 
 fun Node.Call.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =

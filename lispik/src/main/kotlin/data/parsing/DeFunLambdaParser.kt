@@ -23,7 +23,7 @@ fun Tokens.parseDefineLambda(withName: Boolean): Validated<Error, Triple<Option<
                 if (info.token is LToken.Text) {
                     Some(info.token.name)
                 } else {
-                    return Error.ParserError.NameMissing.invalid()
+                    return Error.ParserError.NameMissing(info).invalid()
                 }
             }
     } else {

@@ -7,8 +7,6 @@ import arrow.core.Validated
 import arrow.core.andThen
 import arrow.core.getOrElse
 import arrow.core.invalid
-import arrow.core.left
-import arrow.core.right
 import arrow.core.some
 import arrow.core.valid
 import arrow.core.valueOr
@@ -21,7 +19,7 @@ import domain.Tokenizer
 import domain.VirtualMachine
 import domain.model.Error
 import kotlinx.datetime.Clock
-import java.io.File
+import util.loadFile
 import kotlin.system.exitProcess
 
 class ReplImpl(
@@ -35,7 +33,12 @@ class ReplImpl(
         private val log = ReplLogger.getInstance()
     }
 
-    override fun run(filename: String?, showByteCode: Boolean) {
+    override fun run(
+        filename: String?,
+        showByteCode: Boolean,
+        debug: Boolean,
+        globalEnv: Boolean,
+    ) {
         log.info { "Welcome to Lispík!" }
 
         val source = filename?.let {
@@ -62,13 +65,13 @@ class ReplImpl(
             }
 
         // execute in file expressions
-        compileInput(global)
+        compileInput(global, globalEnv)
             .tap {
                 if (showByteCode) {
                     log.stats { "Compiled bytecode: $it" }
                 }
             }
-            .andThen { vm.runCode(it) }
+            .andThen { vm.runCode(it, debug, globalEnv) }
             .tap { results ->
                 if (results.isEmpty()) return@tap
                 log.result { "Stack result after code evaluation:" }
@@ -79,10 +82,15 @@ class ReplImpl(
                 exitProcess(3)
             }
 
-        runRepl(global, showByteCode)
+        runRepl(global, showByteCode, debug, globalEnv)
     }
 
-    private fun runRepl(global: GlobalScope, showByteCode: Boolean) {
+    private fun runRepl(
+        global: GlobalScope,
+        showByteCode: Boolean,
+        debug: Boolean,
+        globalEnv: Boolean
+    ) {
         while (true) {
             log.waitForInput()
             val line = readFromStdIn() ?: break
@@ -96,18 +104,22 @@ class ReplImpl(
                     else it.valid()
                 }
                 .andThen { local ->
-                    compileAdditional(global, local).map {
+                    compileAdditional(global, local, globalEnv).map {
                         it to Clock.System.now() // record compile time
                     }
                 }
+
                 .tap {
                     if (showByteCode) {
                         log.stats { "Compiled bytecode: ${it.first}" }
                     }
                 }
+
                 .andThen { (code, compileTime) ->
-                    vm.runCode(code).map { it to compileTime }
+                    vm.runCode(code, debug = debug, globalEnv = globalEnv)
+                        .map { it to compileTime }
                 }
+
                 .tap { (results, compileTime) ->
 
                     results.forEach { log.result { it.unwrap() } }
@@ -121,6 +133,7 @@ class ReplImpl(
                 }
         }
 
+        println()
         log.info { "Bye, see you." }
     }
 
@@ -130,12 +143,12 @@ class ReplImpl(
         return parser.parseToAST()
     }
 
-    private fun compileInput(globalScope: GlobalScope) =
-        compiler.compile(globalScope)
+    private fun compileInput(globalScope: GlobalScope, enableGlobalEnv: Boolean) =
+        compiler.compile(globalScope, enableGlobalEnv)
 
-    private fun compileAdditional(globalScope: GlobalScope, localScope: GlobalScope) =
+    private fun compileAdditional(globalScope: GlobalScope, localScope: GlobalScope, enableGlobalEnv: Boolean) =
         globalScope.copy(expressions = localScope.expressions).let { combined ->
-            compiler.compile(combined)
+            compiler.compile(combined, enableGlobalEnv)
         }
 
     private fun readFromStdIn(): String? {
@@ -164,12 +177,5 @@ class ReplImpl(
     private fun readChar(): Option<Char> =
         System.`in`.read().let {
             if (it < 0) None else it.toChar().some()
-        }
-
-    private fun loadFile(filename: String): Either<Exception, String> =
-        try {
-            File(filename).readText().right()
-        } catch (e: Exception) {
-            e.left()
         }
 }

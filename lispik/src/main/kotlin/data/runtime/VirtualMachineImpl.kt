@@ -14,8 +14,13 @@ import domain.model.LStack
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
-class VirtualMachineImpl(private val debugLogging: Boolean) : VirtualMachine {
-    override fun runCode(srcCode: ByteCode.CodeBlock): Validated<Error, ImmutableList<ByteCode.Literal>> {
+class VirtualMachineImpl() : VirtualMachine {
+
+    override fun runCode(
+        srcCode: ByteCode.CodeBlock,
+        debug: Boolean,
+        globalEnv: Boolean,
+    ): Validated<Error, ImmutableList<ByteCode.Literal>> {
         val stack = LStack()
         val dump = LDump()
         val code = LCode().also {
@@ -23,13 +28,13 @@ class VirtualMachineImpl(private val debugLogging: Boolean) : VirtualMachine {
         }
         val env = LEnvironment()
 
-        debugPrint(stack, dump, code, env)
+        debugPrint(debug, stack, dump, code, env)
 
         while (code.isNotEmpty()) {
             when (val inst = code.removeFirst()) {
                 is ByteCode.Instruction ->
                     inst.process(stack, dump, code, env)
-                        .also { debugPrint(stack, dump, code, env) }
+                        .also { debugPrint(debug, stack, dump, code, env) }
                         .handleError { return it.invalid() }
 
                 else -> return Error.ExecutionError.NonInstructionOccurred(inst).invalid()
@@ -39,8 +44,8 @@ class VirtualMachineImpl(private val debugLogging: Boolean) : VirtualMachine {
         return stack.toImmutableList().valid()
     }
 
-    private fun debugPrint(stack: LStack, dump: LDump, code: LCode, env: LEnvironment) {
-        if (!debugLogging) return
+    private fun debugPrint(debug: Boolean, stack: LStack, dump: LDump, code: LCode, env: LEnvironment) {
+        if (!debug) return
 
         println("----------------------------------------------------------------")
         println("Stack: $stack")

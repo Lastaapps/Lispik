@@ -8,5 +8,10 @@ interface Repl {
         fun createInstance() = ReplImpl()
     }
 
-    fun run(filename: String?, showByteCode: Boolean)
+    fun run(
+        filename: String?,
+        showByteCode: Boolean,
+        debug: Boolean,
+        globalEnv: Boolean,
+    )
 }

@@ -8,7 +8,7 @@ import domain.model.Node
 import domain.model.protect
 
 fun Node.Closures.DeFun.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val childContext = context.add(0, this.params)
+    val childContext = context.push(params)
 
     return body.compileDispatcher(childContext).map { child ->
         listOf(child, ByteInstructions.Rtn).flatten()
@@ -16,7 +16,7 @@ fun Node.Closures.DeFun.compile(context: CompilationContext): Validated<Error, B
 }
 
 fun Node.Closures.Lambda.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val childContext = context.add(0, this.params)
+    val childContext = context.push(params)
 
     return body.compileDispatcher(childContext).map { child ->
         listOf(

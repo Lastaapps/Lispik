@@ -3,9 +3,7 @@ package data
 import arrow.core.Invalid
 import arrow.core.Valid
 import arrow.core.Validated
-import arrow.core.invalid
-import arrow.core.valid
-import arrow.core.valueOr
+import arrow.core.andThen
 import domain.Compiler
 import domain.Parser
 import domain.Tokenizer
@@ -31,12 +29,14 @@ class VirtualMachineImplTest : ShouldSpec({
             .also { println("Testing for input:\n$it") }
             .let { lisp -> Tokenizer.from(lisp) }
             .let { tokenizer -> Parser.from(tokenizer) }
-            .let { parser -> parser.parseToAST().valueOr { return it.invalid() } }
-            .let { tree -> Compiler.from().compile(tree, createGlobalEnv = !debug).valueOr { return it.invalid() } }
+            .let { parser -> parser.parseToAST() }
+            .andThen { tree -> Compiler.from().compile(tree, createGlobalEnv = !debug) }
             .also { println("Compiled to bytecode:\n$it") }
-            .let { code -> VirtualMachine.from(true).runCode(code).valueOr { return it.invalid() } }
+            .andThen { code ->
+                VirtualMachine.from()
+                    .runCode(code, debug = true, globalEnv = true)
+            }
             .also { println("Result:\n$it") }
-            .valid()
 
     fun executeAndTest(input: String, expected: List<ByteCode.Literal>) {
         execute(input).let { actual ->

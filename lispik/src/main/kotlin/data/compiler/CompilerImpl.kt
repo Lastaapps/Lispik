@@ -20,7 +20,13 @@ import kotlinx.collections.immutable.toPersistentList
  * Holds function/variable/parameter names
  * The root one is always the global scope
  */
-typealias CompilationContext = PersistentList<ImmutableList<String>>
+data class CompilationContext(
+    val env: PersistentList<ImmutableList<String>>,
+    val globalEnabled: Boolean,
+)
+
+fun CompilationContext.push(env: ImmutableList<String>) =
+    copy(env = this.env.add(0, env))
 
 fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =
     when (this) {
@@ -44,8 +50,11 @@ fun Node.compileDispatcher(context: CompilationContext): Validated<Error, ByteCo
 class CompilerImpl : Compiler {
 
     override fun compile(scope: GlobalScope, createGlobalEnv: Boolean): Validated<Error, ByteCode.CodeBlock> {
-        val rootContext: CompilationContext = persistentListOf(
-            scope.functions.map { it.name }.toPersistentList()
+        val rootContext = CompilationContext(
+            persistentListOf(
+                scope.functions.map { it.name }.toPersistentList(),
+            ),
+            createGlobalEnv,
         )
 
         if (!createGlobalEnv && scope.functions.isNotEmpty()) {

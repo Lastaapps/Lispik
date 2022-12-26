@@ -10,13 +10,13 @@ import domain.model.Error
 import domain.model.Node
 
 fun Node.Named.findCoordinates(context: CompilationContext): Validated<Error, ByteCode.Literal.LPair> {
-    context.forEachIndexed { envIndex, env ->
+    context.env.forEachIndexed { envIndex, env ->
         when (val index = env.indexOf(name)) {
             -1 -> return@forEachIndexed
             else -> {
                 return ByteCode.Literal.LPair(
                     ByteCode.Literal.Integer(
-                        if (envIndex == context.lastIndex) {
+                        if (envIndex == context.env.lastIndex && context.globalEnabled) {
                             ByteCode.Literal.GlobalContext.value
                         } else {
                             envIndex

@@ -51,8 +51,12 @@ private class ReplLoggerImpl : ReplLogger {
     }
 }
 
-fun ReplLogger.error(error: Error, msg: () -> String) =
-    error { msg() + "\n" + error.getMessage() }
+fun ReplLogger.error(error: Error, msg: () -> String) {
+    error { msg() }
+    error { error.getMessage() }
+}
 
-fun ReplLogger.error(exception: Exception, msg: () -> String) =
-    error { msg() + "\n" + exception.message }
+fun ReplLogger.error(exception: Exception, msg: () -> String) {
+    error { msg() }
+    exception.message?.let { error { it } }
+}

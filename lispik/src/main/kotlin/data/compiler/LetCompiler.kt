@@ -15,7 +15,7 @@ import kotlinx.collections.immutable.persistentListOf
  * NIL LDC 1 CONS LDF ( LD (0.0) ) AP
  */
 fun Node.Closures.Let.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val childContext = context.add(0, persistentListOf(name))
+    val childContext = context.push(persistentListOf(name))
 
     val valueCode = value.compileDispatcher(context).valueOr { return it.invalid() } // child context in letrec
     val bodyCode = body.compileDispatcher(childContext).valueOr { return it.invalid() }
@@ -31,7 +31,7 @@ fun Node.Closures.Let.compile(context: CompilationContext): Validated<Error, Byt
 }
 
 fun Node.Closures.LetRec.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> {
-    val childContext = context.add(0, persistentListOf(name))
+    val childContext = context.push(persistentListOf(name))
 
     val valueCode = value.compileDispatcher(childContext).valueOr { return it.invalid() }
     val bodyCode = this.body.compileDispatcher(childContext).valueOr { return it.invalid() }

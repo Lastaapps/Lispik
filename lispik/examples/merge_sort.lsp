@@ -22,3 +22,9 @@
       (if (null? (cdr lst)) lst
           (let (pair (my-split lst))
             (merge-list (merge-sort (car pair)) (merge-sort (cdr pair)))))))
+
+(merge-sort '())
+(merge-sort '(1 2 3 4 5))
+(merge-sort '(5 4 3 2 1))
+(merge-sort '(69 420 42))
+

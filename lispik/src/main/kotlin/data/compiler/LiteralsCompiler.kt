@@ -7,20 +7,27 @@ import domain.model.ByteInstructions
 import domain.model.Error
 import domain.model.Node
 
-fun Node.Literal.compileLiteral(): ByteCode.Literal =
+fun Node.Literal.compileLiteral(): ByteCode.CodeBlock =
     when (this) {
-        is Node.Literal.LInteger -> ByteCode.Literal.Integer(value)
+        is Node.Literal.LInteger -> ByteCode.CodeBlock(
+            ByteInstructions.Ldc,
+            ByteCode.Literal.Integer(value),
+        )
 
-        is Node.Literal.LList -> value.foldRight(ByteCode.Literal.Nil as ByteCode.Literal) { item, acu ->
-            ByteCode.Literal.LPair(item.compileLiteral(), acu)
+        is Node.Literal.LList -> {
+            val content =
+                value.asReversed().map { item ->
+                    listOf(item.compileLiteral(), ByteInstructions.Cons)
+                }.flatten()
+            (listOf(ByteInstructions.Nil) + content).flatten()
         }
 
-        Node.Literal.LNil -> ByteCode.Literal.Nil
+        Node.Literal.LNil -> ByteCode.CodeBlock(ByteInstructions.Nil)
     }
 
 @Suppress("UNUSED_PARAMETER")
 fun Node.Literal.compile(context: CompilationContext): Validated<Error, ByteCode.CodeBlock> =
-    listOf(ByteInstructions.Ldc, compileLiteral()).flatten().valid()
+    compileLiteral().valid()
 
 fun ByteCode.Literal.unwrap(): String =
     when (this) {

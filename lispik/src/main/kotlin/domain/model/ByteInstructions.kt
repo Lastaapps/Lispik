@@ -144,7 +144,7 @@ object ByteInstructions {
      */
     data object Ldc : ByteCode.Instruction {
         override fun process(stack: LStack, dump: LDump, code: LCode, env: LEnvironment): Validated<Error, Unit> {
-            val literal = code.popTyped<ByteCode.Literal>(this).valueOr { return it.invalid() }
+            val literal = code.popTyped<ByteCode.Literal.Integer>(this).valueOr { return it.invalid() }
             stack.push(literal)
             return Unit.valid()
         }
@@ -268,7 +268,7 @@ object ByteInstructions {
                     .map { it.first().compileLiteral() }
                     .valueOr { return it.invalid() }
 
-            stack.push(instructions)
+            code.addAll(0, instructions.instructions)
 
             return Unit.valid()
         }
